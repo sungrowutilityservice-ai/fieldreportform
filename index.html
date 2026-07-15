@@ -16,7 +16,6 @@
     <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiU3VuZ3JvdyBGaWVsZCBTZXJ2aWNlIFJlcG9ydCBGb3JtIiwic2hvcnRfbmFtZSI6IlN1bmdyb3cgRm9ybSIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMmMzZTUwIiwidGhlbWVfY29sb3IiOiIjMmMzZTUwIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vaS5wb3N0aW1nLmNjL1FkSFZHR2o3L2ltYWdlLnBuZyIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9wbmcifSx7InNyYyI6Imh0dHBzOi8vaS5wb3N0aW1nLmNjL1FkSFZHR2o3L2ltYWdlLnBuZyIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
@@ -122,8 +121,11 @@
 
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 10px; flex-grow: 1; margin-bottom: 10px; height: 100%; max-height: 215mm; }
         .photo-slot { border: 1px solid #555; display: flex; flex-direction: column; background-color: #fff; padding: 4px; box-sizing: border-box; overflow: hidden; border-radius: 4px; }
+        
+        /* CSS DIBETULKAN UNTUK GAMBAR TIDAK MENGEMBANG */
         .photo-img-wrapper { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f4f4f4; overflow: hidden; border-radius: 2px; }
-        .photo-img-wrapper img { width: 100%; height: 100%; object-fit: contain; }
+        .photo-img-wrapper img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; margin: auto; }
+        
         .photo-desc-preview { margin-top: 4px; padding-top: 4px; border-top: 1px dashed #ccc; font-size: 10px; text-align: center; color: #2c3e50; font-weight: 600; min-height: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-wrap: break-word; }
 
         .editor-image-item { display: flex; gap: 8px; align-items: center; background: #fff; padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 5px; }
@@ -249,7 +251,7 @@
 
         <div id="formContentWrapper" style="display:block;">
 
-            <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard">
+            <a href="/dashboard" class="btn-dashboard">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
                 Pergi ke Dashboard
             </a>
@@ -294,7 +296,7 @@
                 <select id="f_task" oninput="update('v_task', this.value)">
                     <option value="">-- Pilih Task --</option>
                     <option value="Project Delivery">Project Delivery</option>
-                    <option value="After Sales Under Warranty">After Sales Under Warranty</option>
+                    <option value="After Sales Under Warranty">After Sales Out of Warranty</option>
                     <option value="After Sales Out of Warranty">After Sales Out of Warranty</option>
                 </select>
             </div>
@@ -501,7 +503,7 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxNrMxjneGSwYQNTpW84uGlI8T8i1JI7JxI8GCaSXxN7cvTvZ9qAjy5cWgDO2fIijhW/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzISi-HpLh6CP-TZsqaOn9vPaLgkwsOifGxftZfEnr219p55bgeD0xJCT5GubCr9eID/exec";
         const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
 
         const templateHeaderHTML = `
@@ -518,7 +520,6 @@
         }
         function hideTechLoader() { document.getElementById('techLoader').style.display = "none"; }
 
-        // --- Custom Modal System ---
         function showMessageModal(message, title = "Makluman") {
             document.getElementById('genericMessageModalTitle').innerText = title;
             document.getElementById('genericMessageModalText').innerText = message;
@@ -529,7 +530,6 @@
             document.getElementById('genericMessageModal').style.display = 'none';
         }
 
-        // --- Fetch Dropdown Data (Engineer & Plant) ---
         function loadDropdownData() {
             Papa.parse(ENGINEER_CSV_URL, {
                 download: true,
@@ -543,7 +543,6 @@
                     const plantSet = new Set();
 
                     results.data.forEach(row => {
-                        // 1. Masukkan data ke dropdown Engineer
                         if (row.Engineer) {
                             const position = row.Position ? ` (${row.Position})` : '';
                             const fullName = `${row.Engineer}${position}`;
@@ -556,7 +555,6 @@
                             }
                         }
 
-                        // 2. Masukkan data ke dropdown Plant
                         const plantName = row['Plant Name'] || row.PlantName || row.Plant || '';
                         if (plantName && plantName.trim() !== '' && !plantSet.has(plantName)) {
                             plantSet.add(plantName);
@@ -586,9 +584,6 @@
             }, 1200);
         });
 
-        // ==========================================
-        // EQUIPMENT DETAILS (Product Model / Material Code / Serial No) - dynamic rows
-        // ==========================================
         let equipmentList = [{ model: '', materialCode: '', serialNo: '' }];
 
         function renderEquipmentEditor() {
@@ -624,9 +619,6 @@
             tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center; color:#999;">-</td></tr>';
         }
 
-        // ==========================================
-        // SPARE PART USED (Name / Qty) - dynamic rows
-        // ==========================================
         let sparePartList = [{ name: '', qty: '' }];
 
         function renderSparePartEditor() {
@@ -659,9 +651,6 @@
             tbody.innerHTML = html || '<tr><td colspan="2" style="text-align:center; color:#999;">-</td></tr>';
         }
 
-        // ==========================================
-        // JOB STATUS (conditional Pending Reason)
-        // ==========================================
         function handleJobStatusChange(value) {
             document.getElementById('pendingReasonGroup').style.display = value === 'Pending' ? 'block' : 'none';
             updateJobStatusPreview();
@@ -674,9 +663,6 @@
             document.getElementById('v_job_status').innerText = text;
         }
 
-        // ==========================================
-        // DATE HELPERS (plain date, tak perlu datetime lagi sebab Time In/Out dah takde)
-        // ==========================================
         function formatDateDMY(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
@@ -697,9 +683,6 @@
             document.getElementById('v_job_date_range').innerText = text;
         }
 
-        // ==========================================
-        // GENERIC UPDATE + FIELD SETTER
-        // ==========================================
         function update(targetId, value) {
             const element = document.getElementById(targetId);
             if (element) element.innerText = value;
@@ -708,7 +691,6 @@
         function setFieldValue(inputId, value) {
             const el = document.getElementById(inputId);
             if (el) {
-                // Logik untuk pastikan draf lama tidak hilang sekiranya tiada dalam senarai dropdown
                 if (el.tagName === 'SELECT' && value) {
                     const exists = Array.from(el.options).some(opt => opt.value === value);
                     if (!exists) {
@@ -724,9 +706,6 @@
             }
         }
 
-        // ==========================================
-        // FORM TOGGLE + PREVIEW SCALE (mobile)
-        // ==========================================
         function toggleForm() {
             const panel = document.querySelector('.editor-panel');
             const content = document.getElementById('formContentWrapper');
@@ -754,9 +733,6 @@
         window.addEventListener('resize', applyPreviewScale);
         setTimeout(applyPreviewScale, 300);
 
-        // ==========================================
-        // SEARCH DRAF (APAC/GSP Ticket No / Report ID)
-        // ==========================================
         function searchTicket() {
             const keyword = document.getElementById('searchTicketInput').value.trim();
             const msgBox = document.getElementById('searchMsg');
@@ -801,18 +777,29 @@
 
         let currentStaffToken = "";
 
+        // Penapis pintar format ISO ke YYYY-MM-DD untuk load draf
+        function formatForDateInput(d) {
+            if (!d) return '';
+            if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
+            return d;
+        }
+
         function loadDraftData(dataObj) {
             setFieldValue('f_service_engineer', dataObj.serviceEngineer);
             setFieldValue('f_apac_ticket', dataObj.apacTicket);
             setFieldValue('f_gsp_ticket', dataObj.gspTicket);
             setFieldValue('f_plant_name', dataObj.plantName);
             setFieldValue('f_epcc', dataObj.epcc);
-            setFieldValue('f_report_date', dataObj.reportDate);
+            
+            setFieldValue('f_report_date', formatForDateInput(dataObj.reportDate));
             updateReportDatePreview(dataObj.reportDate || '');
+            
             setFieldValue('f_task', dataObj.task);
-            setFieldValue('f_job_date_from', dataObj.jobDateFrom);
-            setFieldValue('f_job_date_to', dataObj.jobDateTo);
+            
+            setFieldValue('f_job_date_from', formatForDateInput(dataObj.jobDateFrom));
+            setFieldValue('f_job_date_to', formatForDateInput(dataObj.jobDateTo));
             updateJobDateRangePreview();
+            
             setFieldValue('f_job_description', dataObj.jobDescription);
             setFieldValue('f_job_status', dataObj.jobStatus);
             handleJobStatusChange(dataObj.jobStatus || '');
@@ -839,9 +826,6 @@
             showMessageModal("Berjaya tarik data! Sila teruskan kerja anda.", "Berjaya");
         }
 
-        // ==========================================
-        // SIMPAN DRAF
-        // ==========================================
         function getEquipmentDataForPayload() { return equipmentList.filter(eq => eq.model || eq.materialCode || eq.serialNo); }
         function getSparePartDataForPayload() { return sparePartList.filter(sp => sp.name || sp.qty); }
 
@@ -876,11 +860,6 @@
                 draftImages: payloadDraftImages
             };
 
-            if (!payload.plantName) { 
-                showMessageModal("Sila masukkan Plant Name untuk rujukan carian kemudian.", "Ralat Pendaftaran"); 
-                return; 
-            }
-
             btn.disabled = true;
             btn.innerHTML = 'Sedang Menyimpan...';
             msgBox.style.background = "#f1c40f";
@@ -912,9 +891,6 @@
                 });
         }
 
-        // ==========================================
-        // CANVAS TANDATANGAN SERVICE ENGINEER
-        // ==========================================
         const sigCanvasEl = document.getElementById('sigCanvas');
         const sigCtx = sigCanvasEl.getContext('2d');
         let isDrawingSig = false;
@@ -958,9 +934,6 @@
             document.getElementById('preview-engineer-sig').innerHTML = `<img src="${dataUrl}" style="width:100%; height:100%; object-fit:contain;">`;
         }
 
-        // ==========================================
-        // IMAGE UPLOAD (dinamik, tanpa had, chunking 6/page)
-        // ==========================================
         let uploadedImages = [];
 
         function handleImageUpload(input) {
@@ -1040,21 +1013,16 @@
         function removeImage(index) { uploadedImages.splice(index, 1); renderEditorImages(); renderImages(); }
         function clearAllImages() { uploadedImages = []; renderEditorImages(); renderImages(); }
 
-        // ==========================================
-        // NAMA FAIL DINAMIK
-        // ==========================================
         function getDynamicFileName(type) {
-            let plant = document.getElementById('f_plant_name').value.split(',')[0].trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+            let apac = document.getElementById('f_apac_ticket').value.toString().trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'NOAPAC';
+            let gsp = document.getElementById('f_gsp_ticket').value.toString().trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'NOGSP';
             let dateVal = document.getElementById('f_report_date').value;
             let d = '';
             if (dateVal) { let parts = dateVal.split('-'); if (parts.length === 3) d = parts[2] + parts[1] + parts[0]; }
-            plant = plant || 'Plant'; d = d || 'Date';
-            return `${plant}_${d}_${type}.pdf`;
+            d = d || 'Date';
+            return `${apac}_${gsp}_${d}_${type}.pdf`;
         }
 
-        // ==========================================
-        // GENERATE PDF (Download)
-        // ==========================================
         function generatePDF() {
             document.body.classList.add('is-exporting');
             const element = document.getElementById('export-container');
@@ -1083,9 +1051,6 @@
             html2pdf().set(opt).from(element).save().then(() => { hideTechLoader(); restore(); }).catch(() => { hideTechLoader(); restore(); showMessageModal("Ralat semasa menjana PDF. Sila cuba lagi.", "Ralat"); });
         }
 
-        // ==========================================
-        // SUBMIT TO SYSTEM (hantar untuk client approval)
-        // ==========================================
         function submitToSystem() {
             document.body.classList.add('is-exporting');
             const element = document.getElementById('export-container');
