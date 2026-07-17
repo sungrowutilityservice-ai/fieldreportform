@@ -77,6 +77,15 @@
         .input-group input:focus, .input-group textarea:focus, .input-group select:focus { border-color: #3498db; outline: none; }
         .hint-text { font-size: 10px; color: #7f8c8d; margin-top: 3px; }
 
+        .relative { position: relative; }
+        
+        .multi-select { border: 1px solid #bdc3c7; border-radius: 4px; padding: 6px; font-size: 12px; background: white; cursor: pointer; user-select: none; display: flex; align-items: center; }
+        .multi-select:hover { border-color: #3498db; }
+        .multi-select-dropdown { display: none; position: absolute; top: calc(100% - 2px); left: 0; right: 0; background: white; border: 1px solid #3498db; border-top: none; border-radius: 0 0 4px 4px; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .multi-select-dropdown label { display: flex; align-items: center; padding: 6px 10px; margin: 0; cursor: pointer; border-bottom: 1px solid #ecf0f1; color: #2c3e50; font-weight: normal !important; font-size:12px; }
+        .multi-select-dropdown label:hover { background: #f0f8ff; }
+        .multi-select-dropdown input[type="checkbox"] { margin-right: 8px; cursor: pointer; width: auto !important; }
+
         .btn-clear-sig { background: #e74c3c; color: white; border: none; padding: 4px 8px; font-size: 10px; border-radius: 4px; cursor: pointer; margin-top: 5px; float: right; }
 
         .dyn-row { display: flex; gap: 5px; margin-bottom: 4px; align-items: flex-start; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
@@ -122,7 +131,6 @@
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 10px; flex-grow: 1; margin-bottom: 10px; height: 100%; max-height: 215mm; }
         .photo-slot { border: 1px solid #555; display: flex; flex-direction: column; background-color: #fff; padding: 4px; box-sizing: border-box; overflow: hidden; border-radius: 4px; }
         
-        /* CSS DIBETULKAN UNTUK GAMBAR TIDAK MENGEMBANG */
         .photo-img-wrapper { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f4f4f4; overflow: hidden; border-radius: 2px; }
         .photo-img-wrapper img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; margin: auto; }
         
@@ -220,55 +228,59 @@
 
     <div id="genericMessageModal" class="modal-overlay" style="display:none; z-index: 100001;">
         <div class="modal-content" style="text-align: center; max-width: 400px;">
-            <h2 id="genericMessageModalTitle" style="color: #2c3e50; margin-bottom: 10px;">Makluman</h2>
+            <h2 id="genericMessageModalTitle" style="color: #2c3e50; margin-bottom: 10px;">Notification</h2>
             <p id="genericMessageModalText" style="font-size: 14px; margin-bottom: 20px; color: #555; line-height: 1.5;"></p>
-            <button onclick="closeGenericMessageModal()" style="background: #3498db; width: auto; padding: 10px 30px;">Tutup</button>
+            <button onclick="closeGenericMessageModal()" style="background: #3498db; width: auto; padding: 10px 30px;">Close</button>
         </div>
     </div>
 
     <div id="ticketSearchModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
-            <h2>Hasil Carian Draf</h2>
-            <p style="font-size:12px; color:#555;">Sila pilih rekod dari senarai di bawah:</p>
+            <h2>Draft Search Results</h2>
+            <p style="font-size:12px; color:#555;">Please select a record from the list below:</p>
             <div class="ticket-table-container">
                 <table class="ticket-table">
                     <thead>
-                        <tr><th>Report Date</th><th>Ticket No</th><th>Plant Name</th><th>Tindakan</th></tr>
+                        <tr><th>Report Date</th><th>Ticket No</th><th>Plant Name</th><th>Action</th></tr>
                     </thead>
                     <tbody id="ticketTableBody"></tbody>
                 </table>
             </div>
-            <button onclick="closeTicketModal()" style="margin-top: 15px; background: #e74c3c;">Batal</button>
+            <button onclick="closeTicketModal()" style="margin-top: 15px; background: #e74c3c;">Cancel</button>
         </div>
     </div>
 
     <div class="editor-panel">
 
         <div class="editor-header" onclick="toggleForm()">
-            <div class="editor-title">📝 Isi Maklumat Form</div>
-            <div id="toggleIcon" class="toggle-icon">Sembunyi ▲</div>
+            <div class="editor-title">📝 Fill Form Details</div>
+            <div id="toggleIcon" class="toggle-icon">Hide ▲</div>
         </div>
 
         <div id="formContentWrapper" style="display:block;">
 
             <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                Pergi ke Dashboard
+                Go to Dashboard
             </a>
 
             <div class="search-ticket-box">
-                <label style="font-size: 11px; font-weight: bold; color: #2c3e50; display:block; margin-bottom:5px;">Cari & Tarik Data Draf (APAC/GSP Ticket No. atau Report ID)</label>
-                <input type="text" id="searchTicketInput" placeholder="Cth: APAC-1001 atau REP-1234567890">
-                <button id="btnSearchTicket" onclick="searchTicket()">Cari Maklumat Draf</button>
+                <label style="font-size: 11px; font-weight: bold; color: #2c3e50; display:block; margin-bottom:5px;">Search & Fetch Draft Data (APAC/GSP Ticket No. or Report ID)</label>
+                <input type="text" id="searchTicketInput" placeholder="e.g., APAC-1001 or REP-1234567890">
+                <button id="btnSearchTicket" onclick="searchTicket()">Search Draft Data</button>
                 <div id="searchMsg" style="font-size: 10px; color: #e74c3c; margin-top: 5px; font-weight: bold;"></div>
             </div>
 
-            <div class="input-group">
-                <label>Service Engineer</label>
-                <select id="f_service_engineer" onchange="update('v_service_engineer', this.value); update('v_engineer_name_sig', this.value);">
-                    <option value="">-- Pilih Engineer --</option>
-                </select>
+            <div class="input-group relative" id="engineer-select-group">
+                <label>Service Engineer(s)</label>
+                <div class="multi-select" onclick="toggleEngineerSelect()">
+                    <div id="engineer-selected-text" style="min-height:16px; color:#7f8c8d;">-- Select Engineer(s) --</div>
+                </div>
+                <div class="multi-select-dropdown" id="engineer-dropdown">
+                    <!-- Options populated dynamically -->
+                </div>
             </div>
+
             <div class="input-group">
                 <label>APAC Ticket No. <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <input type="text" id="f_apac_ticket" oninput="update('v_apac_ticket', this.value)">
@@ -280,7 +292,7 @@
             <div class="input-group">
                 <label>Plant Name</label>
                 <select id="f_plant_name" onchange="update('v_plant_name', this.value)">
-                    <option value="">-- Pilih Plant --</option>
+                    <option value="">-- Select Plant --</option>
                 </select>
             </div>
             <div class="input-group">
@@ -294,9 +306,9 @@
             <div class="input-group">
                 <label>Task</label>
                 <select id="f_task" oninput="update('v_task', this.value)">
-                    <option value="">-- Pilih Task --</option>
+                    <option value="">-- Select Task --</option>
                     <option value="Project Delivery">Project Delivery</option>
-                    <option value="After Sales Under Warranty">After Sales Out of Warranty</option>
+                    <option value="After Sales Under Warranty">After Sales Under Warranty</option>
                     <option value="After Sales Out of Warranty">After Sales Out of Warranty</option>
                 </select>
             </div>
@@ -305,7 +317,7 @@
                 <input type="date" id="f_job_date_from" oninput="updateJobDateRangePreview()">
             </div>
             <div class="input-group">
-                <label>Service Job Date (To) <span style="font-weight:400; color:#7f8c8d;">(kosongkan jika 1 hari sahaja)</span></label>
+                <label>Service Job Date (To) <span style="font-weight:400; color:#7f8c8d;">(leave empty if only 1 day)</span></label>
                 <input type="date" id="f_job_date_to" oninput="updateJobDateRangePreview()">
             </div>
 
@@ -314,7 +326,7 @@
             <div class="input-group">
                 <label>Equipment Details (Product Model / Material Code / Serial No.)</label>
                 <div id="equipmentEditorContainer"></div>
-                <button type="button" class="btn-add-row" onclick="addEquipmentRow()">+ Tambah Equipment</button>
+                <button type="button" class="btn-add-row" onclick="addEquipmentRow()">+ Add Equipment</button>
             </div>
 
             <div class="input-group">
@@ -325,13 +337,13 @@
             <div class="input-group">
                 <label>Job Status</label>
                 <select id="f_job_status" onchange="handleJobStatusChange(this.value)">
-                    <option value="">-- Pilih Status --</option>
+                    <option value="">-- Select Status --</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
                 </select>
                 <div id="pendingReasonGroup" class="conditional-box">
-                    <label style="color:#d35400;">Reason for Pending <span style="font-weight:400;">(wajib diisi)</span></label>
+                    <label style="color:#d35400;">Reason for Pending <span style="font-weight:400;">(mandatory)</span></label>
                     <textarea id="f_pending_reason" rows="2" oninput="updateJobStatusPreview()"></textarea>
                 </div>
             </div>
@@ -341,12 +353,12 @@
             <div class="input-group">
                 <label>Spare Part Used <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <div id="sparePartEditorContainer"></div>
-                <button type="button" class="btn-add-row" onclick="addSparePartRow()">+ Tambah Spare Part</button>
+                <button type="button" class="btn-add-row" onclick="addSparePartRow()">+ Add Spare Part</button>
             </div>
             <div class="input-group">
                 <label>Spare Part Consumption <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <select id="f_spare_consumption" oninput="update('v_spare_consumption', this.value)">
-                    <option value="">-- Tidak Berkaitan --</option>
+                    <option value="">-- Not Applicable --</option>
                     <option value="On Site Stock">On Site Stock</option>
                     <option value="Part Delivered">Part Delivered</option>
                     <option value="Part Delivered and Consumed">Part Delivered and Consumed</option>
@@ -356,33 +368,33 @@
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
 
             <div class="input-group" style="background: #e8f6f3; padding: 10px; border-radius: 4px;">
-                <label style="color:#16a085;">📸 Upload Gambar (Tiada Had) <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
+                <label style="color:#16a085;">📸 Upload Pictures (No Limit) <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <input type="file" id="imageInput" accept="image/*" multiple onchange="handleImageUpload(this)">
-                <p class="hint-text">Pilih gambar. Muka surat tambahan akan dijana secara automatik untuk setiap 6 gambar dimuat naik.</p>
+                <p class="hint-text">Select pictures. Additional pages will be generated automatically for every 6 pictures uploaded.</p>
                 <div id="editorImageList" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;"></div>
-                <button type="button" class="btn-clear-sig" onclick="clearAllImages()" style="margin-top: 10px; background: #e74c3c;">Padam Semua Gambar</button>
+                <button type="button" class="btn-clear-sig" onclick="clearAllImages()" style="margin-top: 10px; background: #e74c3c;">Clear All Pictures</button>
                 <div style="clear:both;"></div>
             </div>
 
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
 
             <div class="input-group" style="background: #ecf0f1; padding: 10px; border-radius: 4px; border: 1px solid #bdc3c7;">
-                <label style="color:#2c3e50;">✍️ Tandatangan Service Engineer</label>
+                <label style="color:#2c3e50;">✍️ Service Engineer Signature</label>
                 <div style="background: white; border: 1px solid #ccc; border-radius: 4px; overflow:hidden;">
                     <canvas id="sigCanvas" style="width: 100%; height: 120px; cursor: crosshair; touch-action: none;"></canvas>
                 </div>
-                <button type="button" class="btn-clear-sig" onclick="clearSigCanvas()">Padam Tandatangan</button>
+                <button type="button" class="btn-clear-sig" onclick="clearSigCanvas()">Clear Signature</button>
                 <div style="clear:both;"></div>
             </div>
 
             <button id="btnSaveDraft" class="print-btn btn-save-draft" onclick="saveDraftToSystem()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                Simpan Data (Untuk Disambung Kemudian)
+                Save Data (To Continue Later)
             </button>
 
             <button id="submitSystemBtn" class="print-btn" style="background-color: #27ae60;" onclick="submitToSystem()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                Hantar & Dapatkan Link Klien
+                Submit & Get Client Link
             </button>
 
             <button id="downloadBtn" class="print-btn" style="background-color: #e74c3c;" onclick="generatePDF()">
@@ -467,14 +479,14 @@
                     <div class="footer-grid">
                         <div class="sig-col">
                             <div class="sig-title">SERVICE ENGINEER</div>
-                            <div class="sig-box" id="preview-engineer-sig">(Tandatangan Engineer)</div>
+                            <div class="sig-box" id="preview-engineer-sig">(Engineer Signature)</div>
                             <div class="sig-row"><div class="sig-label">Name:</div><div class="field-value" id="v_engineer_name_sig" style="border-bottom:1px solid #ccc;"></div></div>
                             <div class="sig-row"><div class="sig-label">Date:</div><div class="field-value" id="v_sign_date1" style="border-bottom:1px solid #ccc;"></div></div>
                         </div>
 
                         <div class="sig-col">
                             <div class="sig-title">CLIENT ACKNOWLEDGEMENT</div>
-                            <div class="sig-box" style="background-color: #fff9e6; border-color: #f1c40f;">(Menunggu Pengesahan Klien)</div>
+                            <div class="sig-box" style="background-color: #fff9e6; border-color: #f1c40f;">(Waiting for Client Acknowledgement)</div>
                             <div class="sig-row"><div class="sig-label">Name:</div><div class="field-value" id="v_client_ack_name" style="border-bottom:1px solid #ccc;"></div></div>
                             <div class="sig-row"><div class="sig-label">Phone:</div><div class="field-value" id="v_client_ack_phone" style="border-bottom:1px solid #ccc;"></div></div>
                             <div class="sig-row"><div class="sig-label">Company:</div><div class="field-value" id="v_client_ack_company" style="border-bottom:1px solid #ccc;"></div></div>
@@ -485,7 +497,7 @@
                     <div class="section-box" style="margin-top: 20px;">
                         <div class="section-title">Service Rating & Feedback</div>
                         <div class="rating-feedback-box">
-                            <div class="row"><strong>Rating: </strong><span id="v_service_rating">(Menunggu penilaian klien)</span></div>
+                            <div class="row"><strong>Rating: </strong><span id="v_service_rating">(Waiting for client rating)</span></div>
                             <div class="row"><strong>Feedback: </strong><span id="v_service_feedback"></span></div>
                         </div>
                     </div>
@@ -520,7 +532,7 @@
         }
         function hideTechLoader() { document.getElementById('techLoader').style.display = "none"; }
 
-        function showMessageModal(message, title = "Makluman") {
+        function showMessageModal(message, title = "Notification") {
             document.getElementById('genericMessageModalTitle').innerText = title;
             document.getElementById('genericMessageModalText').innerText = message;
             document.getElementById('genericMessageModal').style.display = 'flex';
@@ -530,13 +542,53 @@
             document.getElementById('genericMessageModal').style.display = 'none';
         }
 
+        // Multi-select functionality
+        let selectedEngineers = [];
+
+        function toggleEngineerSelect() {
+            const el = document.getElementById('engineer-dropdown');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        document.addEventListener('click', function(e) {
+            const group = document.getElementById('engineer-select-group');
+            const dropdown = document.getElementById('engineer-dropdown');
+            if(group && dropdown && !group.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function handleEngineerSelection(checkbox) {
+            if (checkbox.checked) {
+                if (!selectedEngineers.includes(checkbox.value)) {
+                    selectedEngineers.push(checkbox.value);
+                }
+            } else {
+                selectedEngineers = selectedEngineers.filter(e => e !== checkbox.value);
+            }
+            updateEngineerUI();
+        }
+
+        function updateEngineerUI() {
+            const textEl = document.getElementById('engineer-selected-text');
+            if(selectedEngineers.length === 0) {
+                textEl.innerText = '-- Select Engineer(s) --';
+                textEl.style.color = '#7f8c8d';
+            } else {
+                textEl.innerText = selectedEngineers.join(', ');
+                textEl.style.color = '#000';
+            }
+            update('v_service_engineer', selectedEngineers.join('\n'));
+            update('v_engineer_name_sig', selectedEngineers.join(', '));
+        }
+
         function loadDropdownData() {
             Papa.parse(ENGINEER_CSV_URL, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    const selectEngineer = document.getElementById('f_service_engineer');
+                    const engineerDropdown = document.getElementById('engineer-dropdown');
                     const selectPlant = document.getElementById('f_plant_name');
                     
                     const engineerSet = new Set();
@@ -548,10 +600,9 @@
                             const fullName = `${row.Engineer}${position}`;
                             if (!engineerSet.has(fullName)) {
                                 engineerSet.add(fullName);
-                                const optionE = document.createElement('option');
-                                optionE.value = fullName;
-                                optionE.innerText = fullName;
-                                selectEngineer.appendChild(optionE);
+                                const lbl = document.createElement('label');
+                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)"> ${fullName}`;
+                                engineerDropdown.appendChild(lbl);
                             }
                         }
 
@@ -566,7 +617,7 @@
                     });
                 },
                 error: function(err) {
-                    console.error("Gagal menarik data dari Google Sheet:", err);
+                    console.error("Failed to fetch data from Google Sheet:", err);
                 }
             });
         }
@@ -595,7 +646,7 @@
                         <input type="text" placeholder="Product Model" oninput="updateEquipment(${index}, 'model', this.value)" value="${eq.model}" style="flex:1.2;">
                         <input type="text" placeholder="Material Code" oninput="updateEquipment(${index}, 'materialCode', this.value)" value="${eq.materialCode}" style="flex:1;">
                         <input type="text" placeholder="Serial No." oninput="updateEquipment(${index}, 'serialNo', this.value)" value="${eq.serialNo}" style="flex:1;">
-                        <button type="button" onclick="removeEquipmentRow(${index})" title="Padam Baris">X</button>
+                        <button type="button" onclick="removeEquipmentRow(${index})" title="Delete Row">X</button>
                     </div>
                 `;
             });
@@ -627,9 +678,9 @@
             sparePartList.forEach((sp, index) => {
                 container.innerHTML += `
                     <div class="dyn-row">
-                        <input type="text" placeholder="Nama Spare Part" oninput="updateSparePart(${index}, 'name', this.value)" value="${sp.name}" style="flex:2;">
+                        <input type="text" placeholder="Spare Part Name" oninput="updateSparePart(${index}, 'name', this.value)" value="${sp.name}" style="flex:2;">
                         <input type="text" placeholder="Qty" oninput="updateSparePart(${index}, 'qty', this.value)" value="${sp.qty}" style="flex:0.6;">
-                        <button type="button" onclick="removeSparePartRow(${index})" title="Padam Baris">X</button>
+                        <button type="button" onclick="removeSparePartRow(${index})" title="Delete Row">X</button>
                     </div>
                 `;
             });
@@ -711,9 +762,9 @@
             const content = document.getElementById('formContentWrapper');
             const icon = document.getElementById('toggleIcon');
             if (content.style.display === 'none') {
-                content.style.display = 'block'; panel.classList.remove('minimized'); icon.innerHTML = 'Sembunyi ▲';
+                content.style.display = 'block'; panel.classList.remove('minimized'); icon.innerHTML = 'Hide ▲';
             } else {
-                content.style.display = 'none'; panel.classList.add('minimized'); icon.innerHTML = 'Papar Form ▼';
+                content.style.display = 'none'; panel.classList.add('minimized'); icon.innerHTML = 'Show Form ▼';
             }
             setTimeout(applyPreviewScale, 100);
         }
@@ -736,9 +787,9 @@
         function searchTicket() {
             const keyword = document.getElementById('searchTicketInput').value.trim();
             const msgBox = document.getElementById('searchMsg');
-            if (!keyword) { msgBox.innerText = "Sila masukkan Ticket No atau Report ID."; return; }
+            if (!keyword) { msgBox.innerText = "Please enter Ticket No or Report ID."; return; }
 
-            msgBox.innerText = "Sedang mencari data... Sila tunggu.";
+            msgBox.innerText = "Searching data... Please wait.";
             const btn = document.getElementById('btnSearchTicket');
             btn.disabled = true;
             showTechLoader("SEARCHING DATABASE...");
@@ -748,11 +799,11 @@
                 .then(data => {
                     hideTechLoader(); btn.disabled = false; msgBox.innerText = "";
                     if (data.status === 'success') displayTicketResults(data.data);
-                    else msgBox.innerText = "Tiada rekod draf dijumpai untuk Ticket No / Report ID ini.";
+                    else msgBox.innerText = "No draft record found for this Ticket No / Report ID.";
                 })
                 .catch(() => {
                     hideTechLoader(); btn.disabled = false;
-                    msgBox.innerText = "Ralat sistem. Pastikan URL Web App tepat.";
+                    msgBox.innerText = "System error. Please ensure Web App URL is correct.";
                 });
         }
 
@@ -767,7 +818,7 @@
                     <td>${row.reportDate || ''}</td>
                     <td>${ticketDisplay || ''}</td>
                     <td>${row.plantName || ''}</td>
-                    <td><button class="btn-pick-ticket" onclick='loadDraftData(${stringifiedData})'>Pilih</button></td>
+                    <td><button class="btn-pick-ticket" onclick='loadDraftData(${stringifiedData})'>Select</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -777,7 +828,6 @@
 
         let currentStaffToken = "";
 
-        // Penapis pintar format ISO ke YYYY-MM-DD untuk load draf
         function formatForDateInput(d) {
             if (!d) return '';
             if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
@@ -785,7 +835,6 @@
         }
 
         function loadDraftData(dataObj) {
-            setFieldValue('f_service_engineer', dataObj.serviceEngineer);
             setFieldValue('f_apac_ticket', dataObj.apacTicket);
             setFieldValue('f_gsp_ticket', dataObj.gspTicket);
             setFieldValue('f_plant_name', dataObj.plantName);
@@ -807,6 +856,33 @@
             updateJobStatusPreview();
             setFieldValue('f_spare_consumption', dataObj.spareConsumption);
 
+            // Set engineers to checkboxes
+            if(dataObj.serviceEngineer) {
+                selectedEngineers = dataObj.serviceEngineer.split(',').map(s => s.trim()).filter(s => s !== '');
+                const dropdown = document.getElementById('engineer-dropdown');
+                selectedEngineers.forEach(eng => {
+                    let cb = dropdown.querySelector(`input[value="${eng}"]`);
+                    if(!cb) {
+                        const lbl = document.createElement('label');
+                        lbl.innerHTML = `<input type="checkbox" value="${eng}" onchange="handleEngineerSelection(this)" checked> ${eng}`;
+                        dropdown.appendChild(lbl);
+                    } else {
+                        cb.checked = true;
+                    }
+                });
+                
+                // Uncheck others
+                const allCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+                allCheckboxes.forEach(cb => {
+                    cb.checked = selectedEngineers.includes(cb.value);
+                });
+                updateEngineerUI();
+            } else {
+                selectedEngineers = [];
+                document.querySelectorAll('#engineer-dropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+                updateEngineerUI();
+            }
+
             equipmentList = (dataObj.equipmentData && dataObj.equipmentData.length > 0) ? dataObj.equipmentData : [{ model: '', materialCode: '', serialNo: '' }];
             renderEquipmentEditor();
             sparePartList = (dataObj.sparePartData && dataObj.sparePartData.length > 0) ? dataObj.sparePartData : [{ name: '', qty: '' }];
@@ -823,7 +899,7 @@
 
             currentStaffToken = dataObj.staffToken;
             closeTicketModal();
-            showMessageModal("Berjaya tarik data! Sila teruskan kerja anda.", "Berjaya");
+            showMessageModal("Data fetched successfully! Please continue your work.", "Success");
         }
 
         function getEquipmentDataForPayload() { return equipmentList.filter(eq => eq.model || eq.materialCode || eq.serialNo); }
@@ -842,7 +918,7 @@
             const payload = {
                 action: "save_draft",
                 staffToken: currentStaffToken,
-                serviceEngineer: document.getElementById('f_service_engineer').value,
+                serviceEngineer: selectedEngineers.join(', '),
                 apacTicket: document.getElementById('f_apac_ticket').value,
                 gspTicket: document.getElementById('f_gsp_ticket').value,
                 plantName: document.getElementById('f_plant_name').value,
@@ -861,9 +937,9 @@
             };
 
             btn.disabled = true;
-            btn.innerHTML = 'Sedang Menyimpan...';
+            btn.innerHTML = 'Saving...';
             msgBox.style.background = "#f1c40f";
-            msgBox.innerHTML = "Menghantar draf ke pangkalan data...";
+            msgBox.innerHTML = "Sending draft to database...";
             showTechLoader("SAVING DATA TO CLOUD...");
 
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
@@ -873,21 +949,21 @@
                     if (data.status === 'success') {
                         msgBox.style.background = "#d4edda";
                         const ref = payload.apacTicket || payload.gspTicket || data.reportId;
-                        msgBox.innerHTML = `<span style="color:green;">Draf berjaya disimpan! Rujukan carian: <b>${ref}</b></span>`;
+                        msgBox.innerHTML = `<span style="color:green;">Draft saved successfully! Search reference: <b>${ref}</b></span>`;
                         if (data.staffToken) currentStaffToken = data.staffToken;
                     } else {
                         msgBox.style.background = "#f8d7da";
-                        msgBox.innerHTML = `<span style="color:red;">Ralat: ${data.message}</span>`;
+                        msgBox.innerHTML = `<span style="color:red;">Error: ${data.message}</span>`;
                     }
                     btn.disabled = false;
-                    btn.innerHTML = 'Simpan Data (Untuk Disambung Kemudian)';
+                    btn.innerHTML = 'Save Data (To Continue Later)';
                 })
                 .catch(() => {
                     hideTechLoader();
                     msgBox.style.background = "#f8d7da";
-                    msgBox.innerHTML = `<span style="color:red;">Ralat Network. Sila pastikan URL Web App tepat.</span>`;
+                    msgBox.innerHTML = `<span style="color:red;">Network Error. Please ensure Web App URL is correct.</span>`;
                     btn.disabled = false;
-                    btn.innerHTML = 'Simpan Data (Untuk Disambung Kemudian)';
+                    btn.innerHTML = 'Save Data (To Continue Later)';
                 });
         }
 
@@ -925,7 +1001,7 @@
 
         function clearSigCanvas() {
             sigCtx.clearRect(0, 0, sigCanvasEl.width, sigCanvasEl.height);
-            document.getElementById('preview-engineer-sig').innerHTML = "(Tandatangan Engineer)";
+            document.getElementById('preview-engineer-sig').innerHTML = "(Engineer Signature)";
         }
         function updateSigPreview() {
             const blank = document.createElement('canvas'); blank.width = sigCanvasEl.width; blank.height = sigCanvasEl.height;
@@ -959,8 +1035,8 @@
                 div.className = 'editor-image-item';
                 div.innerHTML = `
                     <img src="${imgObj.src}" crossorigin="anonymous">
-                    <input type="text" placeholder="Nota gambar..." value="${imgObj.desc}" oninput="updateImageDesc(${index}, this.value)">
-                    <button type="button" onclick="removeImage(${index})" title="Padam">X</button>
+                    <input type="text" placeholder="Picture note..." value="${imgObj.desc}" oninput="updateImageDesc(${index}, this.value)">
+                    <button type="button" onclick="removeImage(${index})" title="Delete">X</button>
                 `;
                 list.appendChild(div);
             });
@@ -982,7 +1058,7 @@
                 let gridHTML = '<div class="photo-grid">';
 
                 if (uploadedImages.length === 0) {
-                    gridHTML += `<div style="grid-column: span 2; text-align: center; color: #7f8c8d; padding-top: 50px; font-style: italic;">- Tiada lampiran gambar disertakan -</div>`;
+                    gridHTML += `<div style="grid-column: span 2; text-align: center; color: #7f8c8d; padding-top: 50px; font-style: italic;">- No picture attachments included -</div>`;
                 } else {
                     for (let i = 0; i < 6; i++) {
                         const imgIndex = (pageIndex * 6) + i;
@@ -990,7 +1066,7 @@
                             gridHTML += `
                                 <div class="photo-slot">
                                     <div class="photo-img-wrapper"><img src="${uploadedImages[imgIndex].src}" crossorigin="anonymous"></div>
-                                    <div class="photo-desc-preview">${uploadedImages[imgIndex].desc || '- Tiada Nota -'}</div>
+                                    <div class="photo-desc-preview">${uploadedImages[imgIndex].desc || '- No Note -'}</div>
                                 </div>`;
                         } else {
                             gridHTML += `<div style="border: none; background: transparent;"></div>`;
@@ -1005,7 +1081,7 @@
                         <div>Page ${3 + pageIndex} of ${totalPages}</div>
                     </div>`;
 
-                pageDiv.innerHTML = templateHeaderHTML + '<h1 class="report-title">Site Photos / Lampiran Gambar</h1>' + gridHTML + footerHTML;
+                pageDiv.innerHTML = templateHeaderHTML + '<h1 class="report-title">Site Photos / Picture Attachments</h1>' + gridHTML + footerHTML;
                 container.appendChild(pageDiv);
             }
             setTimeout(applyPreviewScale, 300);
@@ -1037,7 +1113,7 @@
 
             const btn = document.getElementById('downloadBtn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = 'Sedang Menjana...'; btn.disabled = true;
+            btn.innerHTML = 'Generating...'; btn.disabled = true;
             showTechLoader("COMPILING PDF DOCUMENT...");
 
             function restore() {
@@ -1048,7 +1124,7 @@
                 applyPreviewScale();
             }
 
-            html2pdf().set(opt).from(element).save().then(() => { hideTechLoader(); restore(); }).catch(() => { hideTechLoader(); restore(); showMessageModal("Ralat semasa menjana PDF. Sila cuba lagi.", "Ralat"); });
+            html2pdf().set(opt).from(element).save().then(() => { hideTechLoader(); restore(); }).catch(() => { hideTechLoader(); restore(); showMessageModal("Error generating PDF. Please try again.", "Error"); });
         }
 
         function submitToSystem() {
@@ -1065,8 +1141,8 @@
 
             const btn = document.getElementById('submitSystemBtn');
             const msgBox = document.getElementById('systemMessage');
-            btn.innerHTML = 'Menjana & Menghantar...'; btn.disabled = true;
-            msgBox.innerHTML = "Memproses laporan. Sila tunggu seketika..."; msgBox.style.background = "#f1c40f";
+            btn.innerHTML = 'Generating & Submitting...'; btn.disabled = true;
+            msgBox.innerHTML = "Processing report. Please wait..."; msgBox.style.background = "#f1c40f";
             showTechLoader("PROCESSING REPORT & SYNCING...");
 
             html2pdf().set(opt).from(element).output('datauristring').then(function(pdfBase64) {
@@ -1082,7 +1158,7 @@
                 const payload = {
                     action: "submit_report",
                     staffToken: currentStaffToken,
-                    serviceEngineer: document.getElementById('f_service_engineer').value,
+                    serviceEngineer: selectedEngineers.join(', '),
                     apacTicket: document.getElementById('f_apac_ticket').value,
                     gspTicket: document.getElementById('f_gsp_ticket').value,
                     plantName: document.getElementById('f_plant_name').value,
@@ -1107,28 +1183,28 @@
                         hideTechLoader();
                         if (data.status === 'success') {
                             msgBox.style.background = "#d4edda";
-                            const plantVal = document.getElementById('v_plant_name')?.innerText || 'Plant Tidak Dinyatakan';
-                            const dateVal = document.getElementById('v_report_date')?.innerText || 'Tarikh Tidak Dinyatakan';
+                            const plantVal = document.getElementById('v_plant_name')?.innerText || 'Plant Not Specified';
+                            const dateVal = document.getElementById('v_report_date')?.innerText || 'Date Not Specified';
 
-                            window.currentApprovalTemplate = `Berikut merupakan Field Service Report | ${plantVal} | ${dateVal}\nSila tekan link di bawah untuk approve laporan servis ini\n\n${data.approvalLink}\n\nSungrow TEAM`;
+                            window.currentApprovalTemplate = `Here is the Field Service Report | ${plantVal} | ${dateVal}\nPlease click the link below to approve this service report\n\n${data.approvalLink}\n\nSungrow TEAM`;
 
                             msgBox.innerHTML = `
-                                <span style="color:green;">Berjaya dihantar!</span><br>
-                                Berikan link ini kepada klien:<br>
+                                <span style="color:green;">Submitted successfully!</span><br>
+                                Provide this link to the client:<br>
                                 <a href="${data.approvalLink}" target="_blank" style="color:blue; word-break:break-all; font-weight:normal;">${data.approvalLink}</a>
                                 <div style="margin-top: 15px; display: flex; gap: 10px;">
                                      <button onclick="copyToClipboardTemplate()" style="flex:1; background-color: #34495e; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size:12px;">Copy</button>
                                      <button onclick="sendToWhatsapp()" style="flex:1; background-color: #25D366; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size:12px;">WhatsApp</button>
                                 </div>`;
                         } else {
-                            msgBox.style.background = "#f8d7da"; msgBox.innerHTML = `<span style="color:red;">Ralat: ${data.message}</span>`;
+                            msgBox.style.background = "#f8d7da"; msgBox.innerHTML = `<span style="color:red;">Error: ${data.message}</span>`;
                         }
-                        btn.innerHTML = 'Hantar & Dapatkan Link Klien'; btn.disabled = false;
+                        btn.innerHTML = 'Submit & Get Client Link'; btn.disabled = false;
                     })
                     .catch(() => {
                         hideTechLoader();
-                        msgBox.style.background = "#f8d7da"; msgBox.innerHTML = `<span style="color:red;">Ralat sistem atau Network Error. Pastikan URL Web App tepat.</span>`;
-                        btn.innerHTML = 'Hantar & Dapatkan Link Klien'; btn.disabled = false;
+                        msgBox.style.background = "#f8d7da"; msgBox.innerHTML = `<span style="color:red;">System Error or Network Error. Ensure Web App URL is correct.</span>`;
+                        btn.innerHTML = 'Submit & Get Client Link'; btn.disabled = false;
                     });
             });
         }
@@ -1140,10 +1216,10 @@
             document.body.appendChild(el); el.select();
             try { 
                 document.execCommand('copy'); 
-                showMessageModal('Teks berjaya disalin! Sila paste kepada klien anda.', "Berjaya"); 
+                showMessageModal('Text copied successfully! Please paste it to your client.', "Success"); 
             }
             catch(err) { 
-                showMessageModal('Sistem tidak dapat menyalin teks secara automatik. Sila copy pautan di atas secara manual.', "Ralat Salinan"); 
+                showMessageModal('The system could not copy the text automatically. Please copy the link above manually.', "Copy Error"); 
             }
             document.body.removeChild(el);
         }
