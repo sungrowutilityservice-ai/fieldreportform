@@ -101,18 +101,33 @@
         </div>
     </div>
 
-    <!-- Modal Edit Plant -->
-    <div id="editPlantModal" class="modal-overlay" style="display:none;">
+    <!-- Modal Edit Specific Equipment -->
+    <div id="editEquipmentRecordModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
-            <h2 class="text-lg font-bold text-slate-800 mb-4">Update Plant</h2>
-            <input type="hidden" id="edit-plant-oldname">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Edit Project Record</h2>
+            <input type="hidden" id="edit-eq-oldproject">
+            <input type="hidden" id="edit-eq-oldmodel">
+            <input type="hidden" id="edit-eq-oldserial">
+            
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-slate-500 mb-1">Region</label>
+                <input type="text" id="edit-eq-region" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5">
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-slate-500 mb-1">Project Name</label>
+                <input type="text" id="edit-eq-project" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Product Model</label>
+                <input type="text" id="edit-eq-model" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5">
+            </div>
             <div class="mb-6">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Plant Name</label>
-                <input type="text" id="edit-plant-newname" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Product Code/Serial</label>
+                <input type="text" id="edit-eq-serial" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5">
             </div>
             <div class="flex gap-3">
-                <button onclick="closeEditModals()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition flex-1">Cancel</button>
-                <button id="btn-save-plant" onclick="executeEditPlant()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium transition flex-1">Save</button>
+                <button onclick="closeEditModals()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium flex-1">Cancel</button>
+                <button id="btn-save-edit-eq" onclick="executeEditSpecificEquipment()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium flex-1">Save</button>
             </div>
         </div>
     </div>
@@ -214,8 +229,8 @@
                 
                 <div class="flex items-center bg-slate-50 px-2 py-1 rounded-md border border-slate-200 shrink-0">
                     <i class="fa-solid fa-industry text-slate-400 text-xs mr-2"></i>
-                    <select id="global-plant" class="text-xs bg-slate-50 text-slate-700 outline-none focus:ring-0 font-medium min-w-[110px] cursor-pointer" onchange="applyGlobalFilters()">
-                        <option value="">All Plants</option>
+                    <select id="global-project" class="text-xs bg-slate-50 text-slate-700 outline-none focus:ring-0 font-medium min-w-[110px] cursor-pointer" onchange="applyGlobalFilters()">
+                        <option value="">All Projects</option>
                     </select>
                 </div>
 
@@ -300,7 +315,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
                             <thead class="text-xs text-slate-500 uppercase bg-slate-50">
-                                <tr><th class="px-6 py-3 font-medium">Report Date</th><th class="px-6 py-3 font-medium">Plant Name</th><th class="px-6 py-3 font-medium">Ticket No</th><th class="px-6 py-3 font-medium">Service Engineer</th><th class="px-6 py-3 font-medium">Job Status</th></tr>
+                                <tr><th class="px-6 py-3 font-medium">Report Date</th><th class="px-6 py-3 font-medium">Project Name</th><th class="px-6 py-3 font-medium">Ticket No</th><th class="px-6 py-3 font-medium">Service Engineer</th><th class="px-6 py-3 font-medium">Job Status</th></tr>
                             </thead>
                             <tbody id="recent-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
@@ -314,7 +329,7 @@
                     <div class="p-6 border-b border-slate-100 bg-slate-50/50">
                         <div class="flex flex-col md:flex-row gap-4 items-end">
                             <div class="flex-1 w-full">
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Search Plant / Ticket No</label>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Search Project / Ticket No</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-search text-slate-400"></i></div>
                                     <input type="text" id="search-job" class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full pl-10 p-2.5" placeholder="Search..." onkeyup="filterJobs()">
@@ -335,7 +350,7 @@
                                 <tr>
                                     <th class="px-6 py-4 font-medium whitespace-nowrap">Report ID</th>
                                     <th class="px-6 py-4 font-medium whitespace-nowrap">Report Date</th>
-                                    <th class="px-6 py-4 font-medium">Plant / EPCC</th>
+                                    <th class="px-6 py-4 font-medium">Project / EPCC</th>
                                     <th class="px-6 py-4 font-medium">Ticket No</th>
                                     <th class="px-6 py-4 font-medium">Service Job Date</th>
                                     <th class="px-6 py-4 font-medium">Service Engineer</th>
@@ -371,7 +386,7 @@
                         <div class="relative h-72 w-full"><canvas id="staffChart"></canvas></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Plants Distribution</h3>
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Projects Distribution</h3>
                         <div class="relative h-72 w-full"><canvas id="clientChart"></canvas></div>
                     </div>
                 </div>
@@ -533,7 +548,7 @@
                 
                 <div class="flex space-x-2 mb-6 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
                     <button onclick="switchSettingsTab('engineer')" id="btn-set-eng" class="px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0">Engineer Management</button>
-                    <button onclick="switchSettingsTab('plant')" id="btn-set-plt" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">Plant Management</button>
+                    <button onclick="switchSettingsTab('project')" id="btn-set-proj" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">Project & Equipment</button>
                 </div>
 
                 <!-- VIEW 1: JURUTERA -->
@@ -572,44 +587,98 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Position</label>
                                 <input type="text" id="new-engineer-pos" placeholder="e.g., Senior Engineer" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
                             </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Temporary Password <span class="text-xs text-red-500">*</span></label>
+                                <input type="text" id="new-engineer-pass" placeholder="e.g., Sungrow123" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                            </div>
                             <button id="btn-add-eng" onclick="submitNewEngineer()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition">Add Engineer</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- VIEW 2: PLANT -->
-                <div id="settings-plant-view" class="grid grid-cols-1 lg:grid-cols-2 gap-6 hidden">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
-                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                            <h3 class="text-base font-semibold text-slate-800">Plant List</h3>
-                            <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">Total: <span id="total-plants">0</span></span>
+                <!-- VIEW 2: PROJECT -->
+                <div id="settings-project-view" class="flex flex-col gap-6 hidden">
+                    
+                    <!-- Form Tambah Projek Berada di Atas -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                            <h3 class="text-base font-semibold text-slate-800">Add New Project / Equipment Record</h3>
                         </div>
-                        <div class="overflow-y-auto max-h-96">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10">
-                                    <tr>
-                                        <th class="px-6 py-3 font-medium">Plant Name</th>
-                                        <th class="px-6 py-3 font-medium text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="settings-plant-body" class="divide-y divide-slate-100">
-                                    <tr><td colspan="2" class="px-6 py-4 text-center text-slate-500">Loading data...</td></tr>
-                                </tbody>
-                            </table>
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+                            
+                            <!-- Region (Dropdown / Custom) -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Region</label>
+                                <div id="region-select-wrapper">
+                                    <select id="new-proj-region-select" onchange="handleRegionSelection()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 cursor-pointer">
+                                        <option value="">-- Select Region --</option>
+                                    </select>
+                                </div>
+                                <div id="region-input-wrapper" class="hidden relative">
+                                    <input type="text" id="new-proj-region-input" placeholder="Type new region..." class="w-full bg-blue-50 border border-brand-300 text-brand-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 pr-10">
+                                    <button type="button" onclick="cancelCustomInput('region')" class="absolute right-2 top-2 text-slate-400 hover:text-red-500 p-1 rounded transition" title="Cancel New Entry"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Project Name (Dropdown / Custom) -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Project Name</label>
+                                <div id="project-select-wrapper">
+                                    <select id="new-proj-name-select" onchange="handleProjectSelection()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 cursor-pointer disabled:opacity-50" disabled>
+                                        <option value="">-- Select Region First --</option>
+                                    </select>
+                                </div>
+                                <div id="project-input-wrapper" class="hidden relative">
+                                    <input type="text" id="new-proj-name-input" placeholder="Type new project..." class="w-full bg-blue-50 border border-brand-300 text-brand-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5 pr-10">
+                                    <button type="button" onclick="cancelCustomInput('project')" class="absolute right-2 top-2 text-slate-400 hover:text-red-500 p-1 rounded transition" title="Cancel New Entry"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Product Model</label>
+                                <input type="text" id="new-proj-model" placeholder="e.g., SG350HX" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Product Code/Serial</label>
+                                <input type="text" id="new-proj-serial" placeholder="e.g., ASG01758" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                            </div>
+                            <div class="md:col-span-2 xl:col-span-4 flex justify-end mt-2">
+                                <button id="btn-add-project" onclick="submitNewProject()" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-8 rounded-lg transition shadow-sm"><i class="fa-solid fa-plus mr-2"></i> Add Record to Database</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
-                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                            <h3 class="text-base font-semibold text-slate-800">Add New Plant</h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Plant Name</label>
-                                <input type="text" id="new-plant-name" placeholder="e.g., Solar Farm Perak" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                    <!-- Jadual Projek & Equipment Berada di Bawah (Penuh) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h3 class="text-base font-semibold text-slate-800">Project & Equipment Directory</h3>
+                                <div class="text-xs text-slate-500 mt-1">Total Record: <span id="total-projects" class="font-bold text-slate-800">0</span> items</div>
                             </div>
-                            <button id="btn-add-plant" onclick="submitNewPlant()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition">Add Plant</button>
+                            <div class="relative w-full sm:w-72">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-search text-slate-400"></i></div>
+                                <input type="text" id="search-project" class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full pl-10 p-2" placeholder="Search any detail..." onkeyup="filterProjects()">
+                            </div>
                         </div>
+                        <div class="overflow-x-auto min-h-[300px]">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm">
+                                    <tr>
+                                        <th class="px-6 py-3 font-medium whitespace-nowrap">No</th>
+                                        <th class="px-6 py-3 font-medium whitespace-nowrap">Project Name</th>
+                                        <th class="px-6 py-3 font-medium whitespace-nowrap">Region</th>
+                                        <th class="px-6 py-3 font-medium whitespace-nowrap">Product Model</th>
+                                        <th class="px-6 py-3 font-medium whitespace-nowrap">Serial Number</th>
+                                        <th class="px-6 py-3 font-medium text-right whitespace-nowrap">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="settings-project-body" class="divide-y divide-slate-100">
+                                    <tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Loading data...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination Bar -->
+                        <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center" id="project-pagination"></div>
                     </div>
                 </div>
             </div>
@@ -620,12 +689,14 @@
 
     <script>
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?output=csv'; 
-        const REFERENCE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNrMxjneGSwYQNTpW84uGlI8T8i1JI7JxI8GCaSXxN7cvTvZ9qAjy5cWgDO2fIijhW/exec'; 
+        const ENGINEER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
+        const PROJECT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv';
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzgCJuaum4BEBJY773RIX1WZVv_cDXJygKwENIxnqM4CwMF-S_84Kvoli6AM0AWPs8r/exec'; 
 
         let globalData = [];
         let dateFilteredData = [];
-        let referenceData = [];
+        let engineerData = [];
+        let projectData = [];
         let charts = {};
         
         let publicHolidays = [];
@@ -687,9 +758,14 @@
             document.getElementById('confirmDeleteModal').style.display = 'flex';
         }
 
-        function promptDeletePlant(name) {
-            document.getElementById('confirmDeleteText').innerHTML = `Are you sure you want to delete plant <b>${name}</b>?<br>This action cannot be undone.`;
-            pendingDeleteAction = { type: 'plant', name: name };
+        function promptDeleteEquipment(index) {
+            const item = filteredProjectData[index];
+            const pName = item['Project Name'] || '';
+            const mod = item['Product Model'] || '';
+            const ser = item['Product Code/Serial'] || '';
+            
+            document.getElementById('confirmDeleteText').innerHTML = `Are you sure you want to delete equipment <b>${mod} (${ser})</b> from project <b>${pName}</b>?<br>This action cannot be undone.`;
+            pendingDeleteAction = { type: 'equipment', project: pName, model: mod, serial: ser };
             document.getElementById('confirmDeleteModal').style.display = 'flex';
         }
 
@@ -704,8 +780,16 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = 'Deleting...'; btn.disabled = true;
 
-            const actionKey = pendingDeleteAction.type === 'engineer' ? 'delete_engineer' : 'delete_plant';
-            const reqBody = { action: actionKey, name: pendingDeleteAction.name };
+            let actionKey = '';
+            let reqBody = {};
+
+            if (pendingDeleteAction.type === 'engineer') {
+                actionKey = 'delete_engineer';
+                reqBody = { action: actionKey, name: pendingDeleteAction.name };
+            } else if (pendingDeleteAction.type === 'equipment') {
+                actionKey = 'delete_project_equipment';
+                reqBody = { action: actionKey, projectName: pendingDeleteAction.project, model: pendingDeleteAction.model, serial: pendingDeleteAction.serial };
+            }
 
             try {
                 const res = await fetch(APP_SCRIPT_URL, { method: 'POST', body: JSON.stringify(reqBody) });
@@ -733,15 +817,23 @@
             document.getElementById('editEngineerModal').style.display = 'flex';
         }
 
-        function promptEditPlant(name) {
-            document.getElementById('edit-plant-oldname').value = name;
-            document.getElementById('edit-plant-newname').value = name;
-            document.getElementById('editPlantModal').style.display = 'flex';
+        function promptEditEquipment(index) {
+            const item = filteredProjectData[index];
+            document.getElementById('edit-eq-oldproject').value = item['Project Name'] || '';
+            document.getElementById('edit-eq-oldmodel').value = item['Product Model'] || '';
+            document.getElementById('edit-eq-oldserial').value = item['Product Code/Serial'] || '';
+
+            document.getElementById('edit-eq-region').value = item['Region'] || '';
+            document.getElementById('edit-eq-project').value = item['Project Name'] || '';
+            document.getElementById('edit-eq-model').value = item['Product Model'] || '';
+            document.getElementById('edit-eq-serial').value = item['Product Code/Serial'] || '';
+
+            document.getElementById('editEquipmentRecordModal').style.display = 'flex';
         }
 
         function closeEditModals() {
             document.getElementById('editEngineerModal').style.display = 'none';
-            document.getElementById('editPlantModal').style.display = 'none';
+            document.getElementById('editEquipmentRecordModal').style.display = 'none';
         }
 
         async function executeEditEngineer() {
@@ -776,19 +868,30 @@
             btn.innerHTML = originalText; btn.disabled = false;
         }
 
-        async function executeEditPlant() {
-            const oldName = document.getElementById('edit-plant-oldname').value;
-            const newName = document.getElementById('edit-plant-newname').value.trim();
-            if(!newName) return showMessageModal("Plant name cannot be left blank.");
+        async function executeEditSpecificEquipment() {
+            const oldProject = document.getElementById('edit-eq-oldproject').value;
+            const oldModel = document.getElementById('edit-eq-oldmodel').value;
+            const oldSerial = document.getElementById('edit-eq-oldserial').value;
 
-            const btn = document.getElementById('btn-save-plant');
+            const newRegion = document.getElementById('edit-eq-region').value.trim();
+            const newProject = document.getElementById('edit-eq-project').value.trim();
+            const newModel = document.getElementById('edit-eq-model').value.trim();
+            const newSerial = document.getElementById('edit-eq-serial').value.trim();
+
+            if(!newProject || !newModel) return showMessageModal("Project Name and Product Model are required.");
+
+            const btn = document.getElementById('btn-save-edit-eq');
             const originalText = btn.innerHTML;
             btn.innerHTML = 'Saving...'; btn.disabled = true;
 
             try {
                 const res = await fetch(APP_SCRIPT_URL, { 
                     method: 'POST', 
-                    body: JSON.stringify({ action: 'edit_plant', oldName: oldName, newName: newName }) 
+                    body: JSON.stringify({ 
+                        action: 'edit_project_equipment', 
+                        oldProjectName: oldProject, oldModel: oldModel, oldSerial: oldSerial,
+                        newRegion: newRegion, newProjectName: newProject, newModel: newModel, newSerial: newSerial
+                    }) 
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -886,7 +989,7 @@
                     document.getElementById('loading-overlay').style.display = 'none';
                 },
                 error: function() {
-                    alert("Failed to load data. Please check connection or Sheet visibility.");
+                    showMessageModal("Failed to load data. Please check connection or Sheet visibility.", "Data Load Error");
                     document.getElementById('loading-overlay').style.display = 'none';
                 }
             });
@@ -897,32 +1000,147 @@
         // ==========================================
         function switchSettingsTab(view) {
             const engView = document.getElementById('settings-engineer-view');
-            const pltView = document.getElementById('settings-plant-view');
+            const projView = document.getElementById('settings-project-view');
             const btnEng = document.getElementById('btn-set-eng');
-            const btnPlt = document.getElementById('btn-set-plt');
+            const btnProj = document.getElementById('btn-set-proj');
 
             if (view === 'engineer') {
                 engView.classList.remove('hidden');
-                pltView.classList.add('hidden');
+                projView.classList.add('hidden');
                 btnEng.className = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
-                btnPlt.className = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
+                btnProj.className = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
             } else {
                 engView.classList.add('hidden');
-                pltView.classList.remove('hidden');
-                btnPlt.className = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
+                projView.classList.remove('hidden');
+                btnProj.className = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
                 btnEng.className = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
             }
         }
 
+        let projectSearchTerm = '';
+        let projectCurrentPage = 1;
+        const projectItemsPerPage = 20;
+        let filteredProjectData = [];
+        let regionProjectMap = {}; // Untuk simpan hierarki Region -> Project
+
         function fetchReferences() {
-            Papa.parse(REFERENCE_CSV_URL, {
+            Papa.parse(ENGINEER_CSV_URL, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    referenceData = results.data;
+                    engineerData = results.data;
                     renderSettingsEngineers();
-                    renderSettingsPlants();
                 }
             });
+            Papa.parse(PROJECT_CSV_URL, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    projectData = results.data;
+                    extractRegionProjectMap(); // Proses dropdown sebelum render jadual
+                    filterProjects(); // Triggers render automatically
+                }
+            });
+        }
+
+        // ==========================================
+        // DYNAMIC DROPDOWN LOGIC (REGION -> PROJECT)
+        // ==========================================
+        function extractRegionProjectMap() {
+            regionProjectMap = {};
+            projectData.forEach(row => {
+                const keys = Object.keys(row);
+                const rKey = keys.find(k => k.toLowerCase().includes('region')) || 'Region';
+                const pKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
+                
+                const reg = (row[rKey] || '').trim();
+                const proj = (row[pKey] || '').trim();
+                
+                if (reg) {
+                    if (!regionProjectMap[reg]) regionProjectMap[reg] = new Set();
+                    if (proj) regionProjectMap[reg].add(proj);
+                }
+            });
+            populateRegionDropdown();
+        }
+
+        function populateRegionDropdown() {
+            const select = document.getElementById('new-proj-region-select');
+            select.innerHTML = '<option value="">-- Select Region --</option>';
+            Object.keys(regionProjectMap).sort().forEach(reg => {
+                select.innerHTML += `<option value="${reg}">${reg}</option>`;
+            });
+            select.innerHTML += '<option value="__ADD_NEW__" class="font-bold text-brand-600">➕ Add New Region...</option>';
+        }
+
+        function populateProjectDropdown(region) {
+            const select = document.getElementById('new-proj-name-select');
+            select.innerHTML = '<option value="">-- Select Project Name --</option>';
+            
+            if (region && regionProjectMap[region]) {
+                select.disabled = false;
+                Array.from(regionProjectMap[region]).sort().forEach(proj => {
+                    select.innerHTML += `<option value="${proj}">${proj}</option>`;
+                });
+                select.innerHTML += '<option value="__ADD_NEW__" class="font-bold text-brand-600">➕ Add New Project...</option>';
+            } else {
+                select.disabled = true;
+                if(!region) select.innerHTML = '<option value="">-- Select Region First --</option>';
+                else {
+                    // Situasi Region adalah baharu (baru ditaip), maka project WAJIB baharu
+                    select.disabled = false;
+                    select.innerHTML = '<option value="__ADD_NEW__" class="font-bold text-brand-600">➕ Add New Project...</option>';
+                    select.value = '__ADD_NEW__';
+                    handleProjectSelection(); // Auto trigger input box for project
+                }
+            }
+        }
+
+        function handleRegionSelection() {
+            const val = document.getElementById('new-proj-region-select').value;
+            if (val === '__ADD_NEW__') {
+                document.getElementById('region-select-wrapper').classList.add('hidden');
+                document.getElementById('region-input-wrapper').classList.remove('hidden');
+                document.getElementById('new-proj-region-input').focus();
+                populateProjectDropdown('__NEW_CUSTOM_REGION__');
+            } else {
+                populateProjectDropdown(val);
+                // Reset project input if it was open
+                document.getElementById('project-input-wrapper').classList.add('hidden');
+                document.getElementById('project-select-wrapper').classList.remove('hidden');
+            }
+        }
+
+        function handleProjectSelection() {
+            const val = document.getElementById('new-proj-name-select').value;
+            if (val === '__ADD_NEW__') {
+                document.getElementById('project-select-wrapper').classList.add('hidden');
+                document.getElementById('project-input-wrapper').classList.remove('hidden');
+                document.getElementById('new-proj-name-input').focus();
+            }
+        }
+
+        function cancelCustomInput(type) {
+            if (type === 'region') {
+                document.getElementById('region-input-wrapper').classList.add('hidden');
+                document.getElementById('region-select-wrapper').classList.remove('hidden');
+                document.getElementById('new-proj-region-select').value = '';
+                document.getElementById('new-proj-region-input').value = '';
+                populateProjectDropdown('');
+                
+                document.getElementById('project-input-wrapper').classList.add('hidden');
+                document.getElementById('project-select-wrapper').classList.remove('hidden');
+                document.getElementById('new-proj-name-input').value = '';
+            } else {
+                document.getElementById('project-input-wrapper').classList.add('hidden');
+                document.getElementById('project-select-wrapper').classList.remove('hidden');
+                document.getElementById('new-proj-name-select').value = '';
+                document.getElementById('new-proj-name-input').value = '';
+                
+                const currentReg = document.getElementById('new-proj-region-select').value;
+                if(currentReg === '__ADD_NEW__') {
+                    // Jika batal letak project tapi region memang baru, cancel terus region
+                    cancelCustomInput('region');
+                }
+            }
         }
 
         function renderSettingsEngineers() {
@@ -930,7 +1148,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             let count = 0;
-            referenceData.forEach(row => {
+            engineerData.forEach(row => {
                 if(row.Engineer && row.Engineer.trim() !== '') {
                     count++;
                     tbody.innerHTML += `
@@ -950,38 +1168,133 @@
             document.getElementById('total-engineers').innerText = count;
         }
 
-        function renderSettingsPlants() {
-            const tbody = document.getElementById('settings-plant-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            let count = 0;
-            let plantSet = new Set();
+        function filterProjects() {
+            const searchInput = document.getElementById('search-project');
+            projectSearchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            projectCurrentPage = 1;
+            renderSettingsProjects();
+        }
+
+        function changeProjectPage(page) {
+            projectCurrentPage = page;
+            renderSettingsProjects();
+        }
+        
+        function renderProjectPagination(totalPages) {
+            const paginationContainer = document.getElementById('project-pagination');
+            if (!paginationContainer) return;
+
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
             
-            referenceData.forEach(row => {
-                const plantName = row['Plant Name'] || row.PlantName || row.Plant || row.Plantname || '';
-                if(plantName && plantName.trim() !== '' && !plantSet.has(plantName)) {
-                    plantSet.add(plantName);
-                    count++;
+            let buttonsHtml = '';
+            // For simplicity, showing all pages if small, or simple loop
+            const maxButtons = 5;
+            let startBtn = Math.max(1, projectCurrentPage - 2);
+            let endBtn = Math.min(totalPages, startBtn + maxButtons - 1);
+            if (endBtn - startBtn < maxButtons - 1) {
+                startBtn = Math.max(1, endBtn - maxButtons + 1);
+            }
+
+            if (startBtn > 1) buttonsHtml += `<button onclick="changeProjectPage(1)" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 rounded text-xs mx-0.5">1</button><span class="mx-1 text-slate-400">...</span>`;
+
+            for (let i = startBtn; i <= endBtn; i++) {
+                if (i === projectCurrentPage) {
+                    buttonsHtml += `<button class="px-3 py-1 bg-brand-600 border border-brand-600 text-white rounded text-xs font-bold mx-0.5 shadow-sm">${i}</button>`;
+                } else {
+                    buttonsHtml += `<button onclick="changeProjectPage(${i})" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 rounded text-xs mx-0.5 transition">${i}</button>`;
+                }
+            }
+
+            if (endBtn < totalPages) buttonsHtml += `<span class="mx-1 text-slate-400">...</span><button onclick="changeProjectPage(${totalPages})" class="px-2 py-1 bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 rounded text-xs mx-0.5">${totalPages}</button>`;
+            
+            paginationContainer.innerHTML = `
+                <div class="text-xs text-slate-500 font-medium">Page <span class="text-slate-800">${projectCurrentPage}</span> of ${totalPages}</div>
+                <div class="flex items-center">${buttonsHtml}</div>
+            `;
+        }
+
+        function renderSettingsProjects() {
+            const tbody = document.getElementById('settings-project-body');
+            if (!tbody) return;
+
+            // Apply search
+            filteredProjectData = projectData.filter(row => {
+                const keys = Object.keys(row);
+                const pKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
+                const rKey = keys.find(k => k.toLowerCase().includes('region')) || 'Region';
+                const mKey = keys.find(k => k.toLowerCase().includes('product model')) || 'Product Model';
+                const sKey = keys.find(k => k.toLowerCase().includes('serial') || k.toLowerCase().includes('product code')) || 'Product Code/Serial';
+                
+                // Normalizing keys to ensure direct access works in other functions
+                row['Project Name'] = row[pKey] || '';
+                row['Region'] = row[rKey] || '';
+                row['Product Model'] = row[mKey] || '';
+                row['Product Code/Serial'] = row[sKey] || '';
+
+                const pName = row['Project Name'];
+                const reg = row['Region'];
+                const mod = row['Product Model'];
+                const ser = row['Product Code/Serial'];
+
+                if(!pName && !mod && !ser) return false; // Skip entirely empty rows
+
+                if (!projectSearchTerm) return true;
+
+                return pName.toLowerCase().includes(projectSearchTerm) || 
+                       reg.toLowerCase().includes(projectSearchTerm) || 
+                       mod.toLowerCase().includes(projectSearchTerm) || 
+                       ser.toLowerCase().includes(projectSearchTerm);
+            });
+
+            document.getElementById('total-projects').innerText = filteredProjectData.length;
+
+            // Pagination
+            const totalPages = Math.ceil(filteredProjectData.length / projectItemsPerPage);
+            if(projectCurrentPage > totalPages) projectCurrentPage = totalPages || 1;
+            const startIndex = (projectCurrentPage - 1) * projectItemsPerPage;
+            const endIndex = startIndex + projectItemsPerPage;
+            const pageData = filteredProjectData.slice(startIndex, endIndex);
+
+            tbody.innerHTML = '';
+            
+            if(pageData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">No project or equipment records found.</td></tr>`;
+            } else {
+                pageData.forEach((row, indexInPage) => {
+                    const globalIndex = startIndex + indexInPage; // Need exact index in filteredProjectData for modals
+                    const pName = row['Project Name'];
+                    const reg = row['Region'];
+                    const mod = row['Product Model'];
+                    const ser = row['Product Code/Serial'];
+                    
                     tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                            <td class="px-6 py-3 font-medium text-slate-800">${plantName}</td>
-                            <td class="px-6 py-3 text-right whitespace-nowrap">
-                                <button onclick="promptEditPlant('${plantName}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="Update"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="promptDeletePlant('${plantName}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
+                            <td class="px-6 py-3 text-slate-400 text-xs">${globalIndex + 1}</td>
+                            <td class="px-6 py-3 font-medium text-brand-700 whitespace-nowrap">${pName || '-'}</td>
+                            <td class="px-6 py-3 text-slate-600 text-xs">${reg || '-'}</td>
+                            <td class="px-6 py-3 text-slate-800 font-medium whitespace-nowrap">${mod || '-'}</td>
+                            <td class="px-6 py-3 text-slate-600 text-xs font-mono">${ser || '-'}</td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap opacity-50 group-hover:opacity-100 transition-opacity">
+                                <button onclick="promptEditEquipment(${globalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded transition" title="Edit Record"><i class="fa-solid fa-pen text-xs"></i></button>
+                                <button onclick="promptDeleteEquipment(${globalIndex})" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded ml-1 transition" title="Delete Record"><i class="fa-solid fa-trash text-xs"></i></button>
                             </td>
                         </tr>
                     `;
-                }
-            });
-            
-            if (count === 0) tbody.innerHTML = `<tr><td colspan="2" class="px-6 py-4 text-center text-slate-500">No plant records found.</td></tr>`;
-            document.getElementById('total-plants').innerText = count;
+                });
+            }
+
+            renderProjectPagination(totalPages);
         }
 
         async function submitNewEngineer() {
             const name = document.getElementById('new-engineer-name').value.trim();
             const pos = document.getElementById('new-engineer-pos').value.trim();
+            const pass = document.getElementById('new-engineer-pass').value.trim();
             if(!name) return showMessageModal("Please enter engineer's full name.", "Input Error");
+            if(!pass) return showMessageModal("Please enter a temporary password for the engineer.", "Input Error");
             
             const btn = document.getElementById('btn-add-eng');
             const originalText = btn.innerHTML;
@@ -990,7 +1303,7 @@
             try {
                 const res = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'add_engineer', engineerName: name, engineerPosition: pos })
+                    body: JSON.stringify({ action: 'add_engineer', engineerName: name, engineerPosition: pos, engineerPassword: pass })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -999,6 +1312,7 @@
                     showMessageModal("New engineer added to the system successfully!", "Success");
                     document.getElementById('new-engineer-name').value = '';
                     document.getElementById('new-engineer-pos').value = '';
+                    document.getElementById('new-engineer-pass').value = '';
                     fetchReferences(); 
                 } else {
                     showMessageModal("Error: " + data.message, "System Error");
@@ -1009,25 +1323,50 @@
             btn.innerHTML = originalText; btn.disabled = false;
         }
 
-        async function submitNewPlant() {
-            const name = document.getElementById('new-plant-name').value.trim();
-            if(!name) return showMessageModal("Please enter Plant name.", "Input Error");
+        async function submitNewProject() {
+            // Ambil Region (dari dropdown ATAU custom input)
+            const regionSelect = document.getElementById('new-proj-region-select').value;
+            const regionInput = document.getElementById('new-proj-region-input').value.trim();
+            const isCustomRegion = document.getElementById('region-select-wrapper').classList.contains('hidden');
+            const region = isCustomRegion ? regionInput : regionSelect;
+
+            // Ambil Project Name (dari dropdown ATAU custom input)
+            const projSelect = document.getElementById('new-proj-name-select').value;
+            const projInput = document.getElementById('new-proj-name-input').value.trim();
+            const isCustomProject = document.getElementById('project-select-wrapper').classList.contains('hidden');
+            const pName = isCustomProject ? projInput : projSelect;
+
+            const model = document.getElementById('new-proj-model').value.trim();
+            const serial = document.getElementById('new-proj-serial').value.trim();
+
+            if(!region) return showMessageModal("Please select or enter a Region.", "Input Error");
+            if(!pName) return showMessageModal("Please select or enter a Project Name.", "Input Error");
             
-            const btn = document.getElementById('btn-add-plant');
+            const btn = document.getElementById('btn-add-project');
             const originalText = btn.innerHTML;
-            btn.innerHTML = 'Saving...'; btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...'; btn.disabled = true;
 
             try {
                 const res = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'add_plant', plantName: name })
+                    body: JSON.stringify({ 
+                        action: 'add_project_equipment', 
+                        region: region, 
+                        projectName: pName, 
+                        productModel: model, 
+                        serialNo: serial 
+                    })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
 
                 if(data.status === 'success') {
-                    showMessageModal("New facility (Plant) added to the system successfully!", "Success");
-                    document.getElementById('new-plant-name').value = '';
+                    showMessageModal("New record added successfully!", "Success");
+                    document.getElementById('new-proj-model').value = '';
+                    document.getElementById('new-proj-serial').value = '';
+                    
+                    // Reset dropdown custom forms back to select mode, but retain the values by reloading
+                    cancelCustomInput('region');
                     fetchReferences();
                 } else {
                     showMessageModal("Error: " + data.message, "System Error");
@@ -1057,7 +1396,7 @@
         function applyGlobalFilters() {
             const startVal = document.getElementById('date-start').value;
             const endVal = document.getElementById('date-end').value;
-            const plantVal = document.getElementById('global-plant').value;
+            const projVal = document.getElementById('global-project').value;
             
             let filtered = [...globalData];
 
@@ -1074,8 +1413,8 @@
                 });
             }
 
-            if (plantVal) {
-                filtered = filtered.filter(row => row.PlantName === plantVal);
+            if (projVal) {
+                filtered = filtered.filter(row => row.PlantName === projVal); // Assuming Google Sheet report data still stores under PlantName
             }
 
             dateFilteredData = filtered;
@@ -1087,7 +1426,7 @@
         function clearGlobalFilters() {
             document.getElementById('date-start').value = '';
             document.getElementById('date-end').value = '';
-            document.getElementById('global-plant').value = '';
+            document.getElementById('global-project').value = '';
             applyGlobalFilters();
         }
 
@@ -1733,12 +2072,12 @@
         function populateFilters(data) {
             const statuses = new Set();
             const engineers = new Set();
-            const plants = new Set();
+            const projects = new Set();
             
             data.forEach(d => { 
                 if (d.JobStatus) statuses.add(d.JobStatus); 
                 if (d.ServiceEngineer) engineers.add(d.ServiceEngineer);
-                if (d.PlantName) plants.add(d.PlantName);
+                if (d.PlantName) projects.add(d.PlantName);
             });
             
             const filterSelect = document.getElementById('filter-status');
@@ -1756,13 +2095,13 @@
                 engSelect.value = currentEng;
             }
 
-            const plantSelect = document.getElementById('global-plant');
-            if (plantSelect) {
-                const currentPlant = plantSelect.value;
-                plantSelect.innerHTML = '<option value="">All Plants</option>';
-                const sortedPlants = Array.from(plants).sort();
-                sortedPlants.forEach(p => { plantSelect.innerHTML += `<option value="${p}">${p}</option>`; });
-                plantSelect.value = currentPlant;
+            const projSelect = document.getElementById('global-project');
+            if (projSelect) {
+                const currentProj = projSelect.value;
+                projSelect.innerHTML = '<option value="">All Projects</option>';
+                const sortedProjects = Array.from(projects).sort();
+                sortedProjects.forEach(p => { projSelect.innerHTML += `<option value="${p}">${p}</option>`; });
+                projSelect.value = currentProj;
             }
         }
 
@@ -1860,17 +2199,17 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4] } }, x: { grid: { display: false } } } }
             });
 
-            const plantStats = {};
-            data.forEach(d => { if (d.PlantName) plantStats[d.PlantName] = (plantStats[d.PlantName] || 0) + 1; });
-            let plantArr = Object.keys(plantStats).map(c => ({ name: c, count: plantStats[c] })).sort((a,b) => b.count - a.count);
+            const projStats = {};
+            data.forEach(d => { if (d.PlantName) projStats[d.PlantName] = (projStats[d.PlantName] || 0) + 1; });
+            let projArr = Object.keys(projStats).map(c => ({ name: c, count: projStats[c] })).sort((a,b) => b.count - a.count);
             let labels = [], counts = [];
-            if (plantArr.length > 5) {
-                labels = plantArr.slice(0,5).map(c => c.name.substring(0, 15) + (c.name.length > 15 ? '...' : ''));
-                counts = plantArr.slice(0,5).map(c => c.count);
-                const others = plantArr.slice(5).reduce((sum, c) => sum + c.count, 0);
+            if (projArr.length > 5) {
+                labels = projArr.slice(0,5).map(c => c.name.substring(0, 15) + (c.name.length > 15 ? '...' : ''));
+                counts = projArr.slice(0,5).map(c => c.count);
+                const others = projArr.slice(5).reduce((sum, c) => sum + c.count, 0);
                 labels.push('Others'); counts.push(others);
             } else {
-                labels = plantArr.map(c => c.name); counts = plantArr.map(c => c.count);
+                labels = projArr.map(c => c.name); counts = projArr.map(c => c.count);
             }
             if (charts.client) charts.client.destroy();
             charts.client = new Chart(document.getElementById('clientChart').getContext('2d'), {
