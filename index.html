@@ -123,8 +123,10 @@
         .content-box.small { min-height: 40px; }
 
         .data-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 0; }
-        .data-table th { background-color: #eee; border-bottom: 1px solid #000; font-weight: 700; text-transform: uppercase; padding: 4px 8px; text-align: left; }
-        .data-table td { padding: 4px 8px; vertical-align: top; white-space: pre-wrap; color: #000; border-bottom: 1px solid #ccc; }
+        .data-table th { background-color: #eee; border-bottom: 1px solid #000; border-right: 1px solid #ccc; font-weight: 700; text-transform: uppercase; padding: 4px 8px; text-align: left; }
+        .data-table th:last-child { border-right: none; }
+        .data-table td { padding: 4px 8px; vertical-align: top; white-space: pre-wrap; color: #000; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; }
+        .data-table td:last-child { border-right: none; }
         .data-table tr:last-child td { border-bottom: none; }
         .spare-footer-row { padding: 6px 8px; font-size: 11px; border-top: 1px solid #ccc; }
 
@@ -241,7 +243,7 @@
             <div class="ticket-table-container">
                 <table class="ticket-table">
                     <thead>
-                        <tr><th>Report Date</th><th>Ticket No</th><th>Plant Name</th><th>Action</th></tr>
+                        <tr><th>Report Date</th><th>Ticket No</th><th>Project Name</th><th>Action</th></tr>
                     </thead>
                     <tbody id="ticketTableBody"></tbody>
                 </table>
@@ -285,14 +287,20 @@
                 <label>APAC Ticket No. <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <input type="text" id="f_apac_ticket" oninput="update('v_apac_ticket', this.value)">
             </div>
+            
+            <div class="input-group">
+                <label>C4 ID <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
+                <input type="text" id="f_c4_id" oninput="update('v_c4_id', this.value)">
+            </div>
+
             <div class="input-group">
                 <label>GSP Ticket No. <span style="font-weight:400; color:#7f8c8d;">(optional)</span></label>
                 <input type="text" id="f_gsp_ticket" oninput="update('v_gsp_ticket', this.value)">
             </div>
             <div class="input-group">
-                <label>Plant Name</label>
-                <select id="f_plant_name" onchange="update('v_plant_name', this.value)">
-                    <option value="">-- Select Plant --</option>
+                <label>Project Name</label>
+                <select id="f_project_name" onchange="handleProjectChange(this.value)">
+                    <option value="">-- Select Project --</option>
                 </select>
             </div>
             <div class="input-group">
@@ -425,8 +433,9 @@
                         <div class="grid-item"><div class="field-label">Service Engineer</div><div class="field-value" id="v_service_engineer"></div></div>
                         <div class="grid-item"><div class="field-label">Report Date</div><div class="field-value" id="v_report_date"></div></div>
                         <div class="grid-item"><div class="field-label">APAC Ticket No.</div><div class="field-value" id="v_apac_ticket"></div></div>
+                        <div class="grid-item"><div class="field-label">C4 ID</div><div class="field-value" id="v_c4_id"></div></div>
                         <div class="grid-item"><div class="field-label">GSP Ticket No.</div><div class="field-value" id="v_gsp_ticket"></div></div>
-                        <div class="grid-item"><div class="field-label">Plant Name</div><div class="field-value" id="v_plant_name"></div></div>
+                        <div class="grid-item"><div class="field-label">Project Name</div><div class="field-value" id="v_project_name"></div></div>
                         <div class="grid-item"><div class="field-label">EPCC</div><div class="field-value" id="v_epcc"></div></div>
                         <div class="grid-item"><div class="field-label">Task</div><div class="field-value" id="v_task"></div></div>
                         <div class="grid-item"><div class="field-label">Service Job Date</div><div class="field-value" id="v_job_date_range"></div></div>
@@ -517,6 +526,7 @@
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzISi-HpLh6CP-TZsqaOn9vPaLgkwsOifGxftZfEnr219p55bgeD0xJCT5GubCr9eID/exec";
         const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
+        const EQUIPMENT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv";
 
         const templateHeaderHTML = `
             <div class="report-header">
@@ -582,6 +592,8 @@
             update('v_engineer_name_sig', selectedEngineers.join(', '));
         }
 
+        let projectEquipmentDb = {};
+
         function loadDropdownData() {
             Papa.parse(ENGINEER_CSV_URL, {
                 download: true,
@@ -589,10 +601,7 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     const engineerDropdown = document.getElementById('engineer-dropdown');
-                    const selectPlant = document.getElementById('f_plant_name');
-                    
                     const engineerSet = new Set();
-                    const plantSet = new Set();
 
                     results.data.forEach(row => {
                         if (row.Engineer) {
@@ -605,19 +614,53 @@
                                 engineerDropdown.appendChild(lbl);
                             }
                         }
-
-                        const plantName = row['Plant Name'] || row.PlantName || row.Plant || '';
-                        if (plantName && plantName.trim() !== '' && !plantSet.has(plantName)) {
-                            plantSet.add(plantName);
-                            const optionP = document.createElement('option');
-                            optionP.value = plantName;
-                            optionP.innerText = plantName;
-                            selectPlant.appendChild(optionP);
-                        }
                     });
                 },
                 error: function(err) {
-                    console.error("Failed to fetch data from Google Sheet:", err);
+                    console.error("Failed to fetch engineer data from Google Sheet:", err);
+                }
+            });
+
+            Papa.parse(EQUIPMENT_CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const selectProject = document.getElementById('f_project_name');
+                    projectEquipmentDb = {};
+                    
+                    results.data.forEach(row => {
+                        // Dynamically find keys in case of trailing spaces in header names
+                        const keys = Object.keys(row);
+                        const projKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
+                        const modelKey = keys.find(k => k.toLowerCase().includes('product model')) || 'Product Model';
+                        const serialKey = keys.find(k => k.toLowerCase().includes('serial') || k.toLowerCase().includes('product code')) || 'Product Code/Serial';
+                        
+                        const proj = row[projKey];
+                        const model = row[modelKey];
+                        const serial = row[serialKey];
+                        
+                        if (proj && proj.trim() !== '') {
+                            if (!projectEquipmentDb[proj]) projectEquipmentDb[proj] = {};
+                            if (model && model.trim() !== '') {
+                                if (!projectEquipmentDb[proj][model]) projectEquipmentDb[proj][model] = [];
+                                if (serial && serial.trim() !== '') {
+                                    projectEquipmentDb[proj][model].push(serial.trim());
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Populate Project Dropdown
+                    Object.keys(projectEquipmentDb).sort().forEach(proj => {
+                        const optionP = document.createElement('option');
+                        optionP.value = proj;
+                        optionP.innerText = proj;
+                        selectProject.appendChild(optionP);
+                    });
+                },
+                error: function(err) {
+                    console.error("Failed to fetch project/equipment data from Google Sheet:", err);
                 }
             });
         }
@@ -640,10 +683,25 @@
         function renderEquipmentEditor() {
             const container = document.getElementById('equipmentEditorContainer');
             container.innerHTML = '';
+            
+            const selectedProject = document.getElementById('f_project_name').value;
+            const modelsForProject = projectEquipmentDb[selectedProject] ? Object.keys(projectEquipmentDb[selectedProject]) : [];
+
             equipmentList.forEach((eq, index) => {
+                let modelOptions = `<option value="">-- Select Model --</option>`;
+                modelsForProject.forEach(m => {
+                    modelOptions += `<option value="${m}" ${eq.model === m ? 'selected' : ''}>${m}</option>`;
+                });
+                // Maintain draft data if it exists but is not in the dropdown list
+                if (eq.model && !modelsForProject.includes(eq.model)) {
+                    modelOptions += `<option value="${eq.model}" selected>${eq.model} (Custom/Draft)</option>`;
+                }
+
                 container.innerHTML += `
                     <div class="dyn-row">
-                        <input type="text" placeholder="Product Model" oninput="updateEquipment(${index}, 'model', this.value)" value="${eq.model}" style="flex:1.2;">
+                        <select onchange="updateEquipmentModel(${index}, this.value)" style="flex:1.2; font-size:11px; padding:4px; border:1px solid #bdc3c7; border-radius:3px;">
+                            ${modelOptions}
+                        </select>
                         <input type="text" placeholder="Material Code" oninput="updateEquipment(${index}, 'materialCode', this.value)" value="${eq.materialCode}" style="flex:1;">
                         <input type="text" placeholder="Serial No." oninput="updateEquipment(${index}, 'serialNo', this.value)" value="${eq.serialNo}" style="flex:1;">
                         <button type="button" onclick="removeEquipmentRow(${index})" title="Delete Row">X</button>
@@ -652,6 +710,29 @@
             });
             updateEquipmentPreview();
         }
+
+        function updateEquipmentModel(index, modelValue) {
+            equipmentList[index].model = modelValue;
+            
+            // Auto-fill serial number based on selected model
+            const selectedProject = document.getElementById('f_project_name').value;
+            if (modelValue && projectEquipmentDb[selectedProject] && projectEquipmentDb[selectedProject][modelValue]) {
+                const serials = projectEquipmentDb[selectedProject][modelValue];
+                equipmentList[index].serialNo = serials.length > 0 ? serials[0] : '';
+            } else {
+                equipmentList[index].serialNo = '';
+            }
+            
+            updateEquipmentPreview();
+            renderEquipmentEditor();
+        }
+
+        function handleProjectChange(val) {
+            update('v_project_name', val);
+            equipmentList.forEach(eq => { eq.model = ''; eq.serialNo = ''; });
+            renderEquipmentEditor();
+        }
+
         function addEquipmentRow() { equipmentList.push({ model: '', materialCode: '', serialNo: '' }); renderEquipmentEditor(); }
         function removeEquipmentRow(index) {
             if (equipmentList.length > 1) equipmentList.splice(index, 1);
@@ -836,8 +917,9 @@
 
         function loadDraftData(dataObj) {
             setFieldValue('f_apac_ticket', dataObj.apacTicket);
+            setFieldValue('f_c4_id', dataObj.c4Id);
             setFieldValue('f_gsp_ticket', dataObj.gspTicket);
-            setFieldValue('f_plant_name', dataObj.plantName);
+            setFieldValue('f_project_name', dataObj.plantName);
             setFieldValue('f_epcc', dataObj.epcc);
             
             setFieldValue('f_report_date', formatForDateInput(dataObj.reportDate));
@@ -920,8 +1002,9 @@
                 staffToken: currentStaffToken,
                 serviceEngineer: selectedEngineers.join(', '),
                 apacTicket: document.getElementById('f_apac_ticket').value,
+                c4Id: document.getElementById('f_c4_id').value,
                 gspTicket: document.getElementById('f_gsp_ticket').value,
-                plantName: document.getElementById('f_plant_name').value,
+                plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
                 epcc: document.getElementById('f_epcc').value,
                 reportDate: document.getElementById('f_report_date').value,
                 task: document.getElementById('f_task').value,
@@ -948,7 +1031,7 @@
                     hideTechLoader();
                     if (data.status === 'success') {
                         msgBox.style.background = "#d4edda";
-                        const ref = payload.apacTicket || payload.gspTicket || data.reportId;
+                        const ref = payload.apacTicket || payload.gspTicket || payload.c4Id || data.reportId;
                         msgBox.innerHTML = `<span style="color:green;">Draft saved successfully! Search reference: <b>${ref}</b></span>`;
                         if (data.staffToken) currentStaffToken = data.staffToken;
                     } else {
@@ -1160,8 +1243,9 @@
                     staffToken: currentStaffToken,
                     serviceEngineer: selectedEngineers.join(', '),
                     apacTicket: document.getElementById('f_apac_ticket').value,
+                    c4Id: document.getElementById('f_c4_id').value,
                     gspTicket: document.getElementById('f_gsp_ticket').value,
-                    plantName: document.getElementById('f_plant_name').value,
+                    plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
                     epcc: document.getElementById('f_epcc').value,
                     reportDate: document.getElementById('f_report_date').value,
                     task: document.getElementById('f_task').value,
@@ -1183,7 +1267,7 @@
                         hideTechLoader();
                         if (data.status === 'success') {
                             msgBox.style.background = "#d4edda";
-                            const plantVal = document.getElementById('v_plant_name')?.innerText || 'Plant Not Specified';
+                            const plantVal = document.getElementById('v_project_name')?.innerText || 'Project Not Specified';
                             const dateVal = document.getElementById('v_report_date')?.innerText || 'Date Not Specified';
 
                             window.currentApprovalTemplate = `Here is the Field Service Report | ${plantVal} | ${dateVal}\nPlease click the link below to approve this service report\n\n${data.approvalLink}\n\nSungrow TEAM`;
