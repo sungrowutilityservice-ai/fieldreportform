@@ -206,15 +206,40 @@
 
         @media print {
             body { background-color: white; height: auto; overflow: visible; display: block; }
-            .editor-panel, .print-btn, .btn-save-draft, .btn-dashboard { display: none !important; }
+            .editor-panel, .print-btn, .btn-save-draft, .btn-dashboard, .logout-btn { display: none !important; }
             .preview-panel { padding: 0; background: none; display: block; }
             #export-container { display: block; gap: 0; transform: none !important; margin: 0 !important; }
             .a4-page { box-shadow: none; margin: 0; width: 100%; height: 296mm; border: none; page-break-after: always; padding: 10mm 15mm; overflow: hidden; }
             @page { margin: 0; size: A4; }
         }
+
+        #loginModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--color-bg-app); z-index: 100002; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box h2 { text-align: center; margin-bottom: 20px; color: var(--color-bg-app); }
+        .login-box input, .login-box select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; background: white; font-family: inherit; }
+        .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .login-box button:hover { background: #2980b9; }
+        .login-error { color: #e74c3c; font-size: 12px; text-align: center; margin-bottom: 15px; font-weight: bold; min-height: 15px; }
+        .logout-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .logout-btn:hover { background: #c0392b; }
     </style>
 </head>
 <body>
+
+    <div id="loginModal" style="display:none;">
+        <div class="login-box">
+            <div style="text-align:center; margin-bottom:20px;">
+                <img src="https://i.postimg.cc/QdHVGGj7/image.png" alt="Sungrow Logo" style="width:70px;">
+            </div>
+            <h2>System Login</h2>
+            <div class="login-error" id="loginError"></div>
+            <select id="loginUsername">
+                <option value="">-- Loading database... --</option>
+            </select>
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button id="btnLogin" onclick="executeLogin()">Login</button>
+        </div>
+    </div>
 
     <div id="techLoader">
         <div class="tech-loader-content">
@@ -261,10 +286,15 @@
 
         <div id="formContentWrapper" style="display:block;">
 
-            <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                Go to Dashboard
-            </a>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard" id="btnGoDashboard" style="flex: 1; margin-bottom: 0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    Go to Dashboard
+                </a>
+                <button onclick="executeLogout()" class="logout-btn" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
 
             <div class="search-ticket-box">
                 <label style="font-size: 11px; font-weight: bold; color: #2c3e50; display:block; margin-bottom:5px;">Search & Fetch Draft Data (APAC/GSP Ticket No. or Report ID)</label>
@@ -524,9 +554,11 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzISi-HpLh6CP-TZsqaOn9vPaLgkwsOifGxftZfEnr219p55bgeD0xJCT5GubCr9eID/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz6ywxtAASVOLQkwwa-MEq8MM9eqBouiUKC4XmelkHLzKdg2eKMb6E6JVTFLuVd4T-Q/exec";
         const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
         const EQUIPMENT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv";
+
+        let loggedInUser = { name: '', role: '' };
 
         const templateHeaderHTML = `
             <div class="report-header">
@@ -589,7 +621,6 @@
                 textEl.style.color = '#000';
             }
             update('v_service_engineer', selectedEngineers.join('\n'));
-            update('v_engineer_name_sig', selectedEngineers.join(', '));
         }
 
         let projectEquipmentDb = {};
@@ -610,11 +641,30 @@
                             if (!engineerSet.has(fullName)) {
                                 engineerSet.add(fullName);
                                 const lbl = document.createElement('label');
-                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)"> ${fullName}`;
+                                
+                                let isManager = (loggedInUser.role || '').toLowerCase().includes('manager');
+                                let isMatch = row.Engineer.toLowerCase() === loggedInUser.name.toLowerCase();
+                                
+                                let checkAttr = '';
+                                let disableAttr = '';
+                                let styleStr = 'color: #2c3e50;';
+
+                                if (isMatch) {
+                                    checkAttr = 'checked';
+                                    if (!selectedEngineers.includes(fullName)) selectedEngineers.push(fullName);
+                                    
+                                    if (!isManager) {
+                                        disableAttr = 'disabled';
+                                        styleStr = 'color: #95a5a6; font-style: italic; font-weight: bold;';
+                                    }
+                                }
+
+                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)" ${checkAttr} ${disableAttr}> <span style="${styleStr}">${fullName}</span>`;
                                 engineerDropdown.appendChild(lbl);
                             }
                         }
                     });
+                    updateEngineerUI();
                 },
                 error: function(err) {
                     console.error("Failed to fetch engineer data from Google Sheet:", err);
@@ -666,7 +716,54 @@
         }
 
         window.addEventListener('load', () => {
+            showTechLoader("FETCHING USER DATABASE...");
+            fetchEngineersForLogin();
+        });
+
+        function fetchEngineersForLogin() {
+            Papa.parse(ENGINEER_CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const loginSelect = document.getElementById('loginUsername');
+                    loginSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
+                    results.data.forEach(row => {
+                        if (row.Engineer) {
+                            const option = document.createElement('option');
+                            option.value = row.Engineer; // Exact name for backend checking
+                            const roleText = row.Position ? row.Position : 'Staff';
+                            option.innerText = `${row.Engineer} (${roleText})`;
+                            loginSelect.appendChild(option);
+                        }
+                    });
+                    checkSessionAndInit();
+                },
+                error: function(err) {
+                    console.error("Failed to load users for login:", err);
+                    document.getElementById('loginUsername').innerHTML = '<option value="">Error loading database</option>';
+                    checkSessionAndInit();
+                }
+            });
+        }
+
+        function checkSessionAndInit() {
+            const storedSession = sessionStorage.getItem('sungrowUser');
+            if (storedSession) {
+                loggedInUser = JSON.parse(storedSession);
+                document.getElementById('loginModal').style.display = 'none';
+                initSystem();
+            } else {
+                setTimeout(() => {
+                    hideTechLoader();
+                    document.getElementById('loginModal').style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        function initSystem() {
             showTechLoader("SYSTEM BOOTING...");
+            applyUserRoles();
             loadDropdownData();
             renderEquipmentEditor();
             renderSparePartEditor();
@@ -676,7 +773,68 @@
                 applyPreviewScale();
                 hideTechLoader();
             }, 1200);
-        });
+        }
+
+        async function executeLogin() {
+            const user = document.getElementById('loginUsername').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+            const errEl = document.getElementById('loginError');
+            const btn = document.getElementById('btnLogin');
+
+            if(!user || !pass) { errEl.innerText = "Please enter Name and Password."; return; }
+
+            errEl.innerText = "";
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: user, password: pass })
+                });
+                const data = await res.json();
+
+                if(data.status === 'success') {
+                    loggedInUser = data.user;
+                    sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
+                    document.getElementById('loginModal').style.display = 'none';
+                    initSystem();
+                } else {
+                    errEl.innerText = data.message || "Login failed.";
+                    btn.innerText = "Login";
+                    btn.disabled = false;
+                }
+            } catch(e) {
+                errEl.innerText = "Network error. Please try again.";
+                btn.innerText = "Login";
+                btn.disabled = false;
+            }
+        }
+
+        function executeLogout() {
+            sessionStorage.removeItem('sungrowUser');
+            location.reload();
+        }
+
+        function applyUserRoles() {
+            const dashBtn = document.getElementById('btnGoDashboard');
+            const isServicePartner = (loggedInUser.role || '').toLowerCase().includes('partner');
+            
+            if (isServicePartner) {
+                if(dashBtn) dashBtn.style.display = 'none';
+            } else {
+                if(dashBtn) dashBtn.style.display = 'flex';
+            }
+
+            // Lock Signature to logged-in user
+            update('v_engineer_name_sig', loggedInUser.name);
+            
+            // UI Info
+            const titleEl = document.querySelector('.editor-title');
+            if (titleEl && !titleEl.innerHTML.includes(loggedInUser.name)) {
+                titleEl.innerHTML = `📝 Fill Form Details <span style="font-size:10px; color:#7f8c8d; font-weight:normal; margin-left:5px;">(${loggedInUser.name})</span>`;
+            }
+        }
 
         let equipmentList = [{ model: '', materialCode: '', serialNo: '' }];
 
@@ -849,6 +1007,7 @@
             }
             setTimeout(applyPreviewScale, 100);
         }
+        
         function applyPreviewScale() {
             if (document.body.classList.contains('is-exporting')) return;
             const wrapper = document.getElementById('export-container');
@@ -938,30 +1097,35 @@
             updateJobStatusPreview();
             setFieldValue('f_spare_consumption', dataObj.spareConsumption);
 
-            // Set engineers to checkboxes
+            // Set engineers to checkboxes safely respecting RBAC
+            const dropdown = document.getElementById('engineer-dropdown');
+            const lockedEngineers = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:disabled')).filter(cb => cb.checked).map(cb => cb.value);
+
             if(dataObj.serviceEngineer) {
-                selectedEngineers = dataObj.serviceEngineer.split(',').map(s => s.trim()).filter(s => s !== '');
-                const dropdown = document.getElementById('engineer-dropdown');
+                let draftEngineers = dataObj.serviceEngineer.split(',').map(s => s.trim()).filter(s => s !== '');
+                selectedEngineers = [...new Set([...draftEngineers, ...lockedEngineers])];
+
+                // Check/Uncheck logic
+                const allCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+                allCheckboxes.forEach(cb => {
+                    if (!cb.disabled) cb.checked = selectedEngineers.includes(cb.value);
+                });
+
+                // Add missing checkboxes
                 selectedEngineers.forEach(eng => {
                     let cb = dropdown.querySelector(`input[value="${eng}"]`);
                     if(!cb) {
                         const lbl = document.createElement('label');
                         lbl.innerHTML = `<input type="checkbox" value="${eng}" onchange="handleEngineerSelection(this)" checked> ${eng}`;
                         dropdown.appendChild(lbl);
-                    } else {
-                        cb.checked = true;
                     }
-                });
-                
-                // Uncheck others
-                const allCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-                allCheckboxes.forEach(cb => {
-                    cb.checked = selectedEngineers.includes(cb.value);
                 });
                 updateEngineerUI();
             } else {
-                selectedEngineers = [];
-                document.querySelectorAll('#engineer-dropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+                selectedEngineers = [...lockedEngineers];
+                document.querySelectorAll('#engineer-dropdown input[type="checkbox"]').forEach(cb => {
+                    if (!cb.disabled) cb.checked = false;
+                });
                 updateEngineerUI();
             }
 
