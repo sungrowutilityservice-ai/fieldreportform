@@ -17,7 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Menggunakan xlsx-js-style untuk membolehkan styling/border di dalam fail Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,7 +34,6 @@
             }
         }
     </script>
-    
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -160,7 +160,6 @@
             </div>
         </div>
     </div>
-
 
     <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity" onclick="toggleSidebar()"></div>
 
@@ -408,50 +407,42 @@
                 <!-- First Row Charts (Bar & Doughnut) -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4">Jobs Completed by Engineer</h3>
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Jobs Completed by Service Engineer</h3>
                         <div class="relative h-64 w-full"><canvas id="staffChart"></canvas></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4">Job Distribution by Task</h3>
-                        <div class="relative h-64 w-full flex justify-center"><canvas id="taskChart"></canvas></div>
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Projects Distribution</h3>
+                        <div class="relative h-64 w-full flex justify-center"><canvas id="clientChart"></canvas></div>
                     </div>
                 </div>
 
                 <!-- Second Row Charts (Equipments & Spare Parts) -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Equipment Models Serviced (from Database)</h3>
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Problematic Equipment Models</h3>
                         <div class="relative h-64 w-full"><canvas id="equipmentChart"></canvas></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Consumed Spare Parts (by Quantity)</h3>
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Consumed Spare Parts</h3>
                         <div class="relative h-64 w-full"><canvas id="sparePartChart"></canvas></div>
                     </div>
                 </div>
                 
-                <!-- Third Row (Projects & Detailed Table) -->
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 xl:col-span-1">
-                        <h3 class="text-sm font-bold text-slate-800 mb-4">Top Projects Distribution</h3>
-                        <div class="relative h-64 w-full flex justify-center"><canvas id="clientChart"></canvas></div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden xl:col-span-2 flex flex-col">
-                        <div class="px-6 py-4 border-b border-slate-100 bg-white"><h3 class="text-sm font-bold text-slate-800">Detailed Engineer Workload Summary</h3></div>
-                        <div class="overflow-x-auto flex-1">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-[10px] text-brand-600 uppercase bg-slate-50 sticky top-0 z-10 tracking-widest border-b border-slate-100">
-                                    <tr>
-                                        <th class="px-6 py-4 font-bold">Service Engineer</th>
-                                        <th class="px-6 py-4 font-bold text-center">Total<br>Jobs</th>
-                                        <th class="px-6 py-4 font-bold text-center text-orange-500">Pending<br>Jobs</th>
-                                        <th class="px-6 py-4 font-bold text-center text-blue-500">Parts<br>Handled</th>
-                                        <th class="px-6 py-4 font-bold text-center text-emerald-600">Avg<br>Rating</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="staff-table-body" class="divide-y divide-slate-100"></tbody>
-                            </table>
-                        </div>
+                <!-- Third Row (Detailed Table) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6 flex flex-col">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-white"><h3 class="text-sm font-bold text-slate-800">Service Engineer Workload Summary</h3></div>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-[10px] text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 tracking-widest border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4 font-bold">Service Engineer</th>
+                                    <th class="px-6 py-4 font-bold text-center">Total Jobs</th>
+                                    <th class="px-6 py-4 font-bold text-center">Avg Rating</th>
+                                    <th class="px-6 py-4 font-bold">Recent Job Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -541,10 +532,10 @@
 
                 <div class="flex flex-wrap justify-end gap-2 mb-4">
                     <button onclick="exportAllowanceExcel()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow-sm">
-                        <i class="fa-solid fa-download mr-2 text-emerald-600"></i> Excel only
+                        <i class="fa-solid fa-file-excel mr-2 text-emerald-600"></i> Excel only
                     </button>
                     <button onclick="exportAllowancePDF()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow-sm">
-                        <i class="fa-solid fa-download mr-2 text-red-500"></i> PDF only
+                        <i class="fa-solid fa-file-pdf mr-2 text-red-500"></i> PDF only
                     </button>
                     <button id="btn-submit-claim" onclick="submitClaimToSystem()" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition flex items-center shadow-sm ml-2">
                         <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Generate Claims & Save
@@ -565,14 +556,14 @@
                         <table class="w-full text-sm text-left" id="allowanceTable">
                             <thead class="text-xs text-slate-500 uppercase bg-slate-50">
                                 <tr>
-                                    <th class="px-4 py-3 font-medium w-12">No</th>
-                                    <th class="px-4 py-3 font-medium min-w-[100px]">Date</th>
-                                    <th class="px-4 py-3 font-medium min-w-[140px]">GSP Ticket Number</th>
-                                    <th class="px-4 py-3 font-medium min-w-[200px]">Job Description</th>
-                                    <th class="px-4 py-3 font-medium min-w-[150px]">Accommodation</th>
-                                    <th class="px-4 py-3 font-medium min-w-[150px]">Receipt Upload</th>
-                                    <th class="px-4 py-3 font-medium min-w-[100px] text-center">Price (USD)</th>
-                                    <th class="px-4 py-3 font-medium min-w-[100px] text-center">Price (MYR)</th>
+                                    <th class="px-4 py-3 font-medium w-12 border-r border-slate-100">No</th>
+                                    <th class="px-4 py-3 font-medium min-w-[100px] border-r border-slate-100">Date</th>
+                                    <th class="px-4 py-3 font-medium min-w-[140px] border-r border-slate-100">GSP Ticket Number</th>
+                                    <th class="px-4 py-3 font-medium min-w-[200px] border-r border-slate-100">Job Description</th>
+                                    <th class="px-4 py-3 font-medium min-w-[150px] border-r border-slate-100">Accommodation</th>
+                                    <th class="px-4 py-3 font-medium min-w-[150px] border-r border-slate-100">Receipt Upload</th>
+                                    <th class="px-4 py-3 font-medium min-w-[100px] text-center border-r border-slate-100">Price (USD)</th>
+                                    <th class="px-4 py-3 font-medium min-w-[100px] text-center border-r border-slate-100">Price (MYR)</th>
                                     <th class="px-4 py-3 font-medium min-w-[150px]">Remark</th>
                                 </tr>
                             </thead>
@@ -581,9 +572,9 @@
                             </tbody>
                             <tfoot class="bg-slate-50 font-bold text-slate-800 border-t border-slate-200">
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-right uppercase tracking-wider">Grand Total:</td>
-                                    <td class="px-4 py-4 text-center text-emerald-600 text-base" id="footer-total-usd">0.00</td>
-                                    <td class="px-4 py-4 text-center text-blue-600 text-base" id="footer-total-myr">0.00</td>
+                                    <td colspan="6" class="px-6 py-4 text-right uppercase tracking-wider border-r border-slate-200">Grand Total:</td>
+                                    <td class="px-4 py-4 text-center text-emerald-600 text-base border-r border-slate-200" id="footer-total-usd">0.00</td>
+                                    <td class="px-4 py-4 text-center text-blue-600 text-base border-r border-slate-200" id="footer-total-myr">0.00</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -596,16 +587,35 @@
             <div id="tab-settings" class="tab-content">
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold text-slate-800">System Configuration</h3>
-                    <p class="text-sm text-slate-500 mt-1">Manage the list of engineers and plant facilities without opening Google Sheets.</p>
+                    <p class="text-sm text-slate-500 mt-1">Manage user account and system database without opening Google Sheets.</p>
                 </div>
                 
                 <div class="flex space-x-2 mb-6 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
-                    <button onclick="switchSettingsTab('engineer')" id="btn-set-eng" class="px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0">Engineer Management</button>
+                    <button onclick="switchSettingsTab('account')" id="btn-set-acc" class="px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0">My Account</button>
+                    <button onclick="switchSettingsTab('engineer')" id="btn-set-eng" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">Engineer Management</button>
                     <button onclick="switchSettingsTab('project')" id="btn-set-proj" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">Project & Equipment</button>
                 </div>
 
-                <!-- VIEW 1: JURUTERA -->
-                <div id="settings-engineer-view" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- VIEW 1: MY ACCOUNT (GANTI PASSWORD) -->
+                <div id="settings-account-view" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 h-fit">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Change Password</h3>
+                        <p class="text-xs text-slate-500 mb-4">Keep your account secure by updating your password below.</p>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                            <input type="password" id="acc-new-pass" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Enter new password">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
+                            <input type="password" id="acc-conf-pass" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Re-enter new password">
+                        </div>
+                        <button id="btn-update-pass" onclick="updatePassword()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-6 rounded-lg transition w-full sm:w-auto shadow-sm"><i class="fa-solid fa-key mr-2"></i> Update Password</button>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: ENGINEER MANAGEMENT -->
+                <div id="settings-engineer-view" class="hidden grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                             <h3 class="text-base font-semibold text-slate-800">Engineer List</h3>
@@ -644,15 +654,13 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Temporary Password <span class="text-xs text-red-500">*</span></label>
                                 <input type="text" id="new-engineer-pass" placeholder="e.g., Sungrow123" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
                             </div>
-                            <button id="btn-add-eng" onclick="submitNewEngineer()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition">Add Engineer</button>
+                            <button id="btn-add-eng" onclick="submitNewEngineer()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition shadow-sm">Add Engineer</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- VIEW 2: PROJECT -->
-                <div id="settings-project-view" class="flex flex-col gap-6 hidden">
-                    
-                    <!-- Form Tambah Projek Berada di Atas -->
+                <!-- VIEW 3: PROJECT MANAGEMENT -->
+                <div id="settings-project-view" class="hidden flex-col gap-6">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                             <h3 class="text-base font-semibold text-slate-800">Add New Project / Equipment Record</h3>
@@ -701,7 +709,6 @@
                         </div>
                     </div>
 
-                    <!-- Jadual Projek & Equipment Berada di Bawah (Penuh) -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
@@ -730,7 +737,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Pagination Bar -->
                         <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-between items-center" id="project-pagination"></div>
                     </div>
                 </div>
@@ -744,7 +750,7 @@
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?output=csv'; 
         const ENGINEER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
         const PROJECT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv';
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-fgb0FuzfFwmAuIxgWFRGSyKY5vydcYxin9IpNC-FEdGrQfqRRsZ8zMNqDCL6ZQw/exec'; 
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEw5ffJJjnaptPY4LqR0zsc6V6ycspZoplUlT5cBoQK2gn1gDvnmOETbXOUYeLCJ0i/exec'; 
 
         let globalData = [];
         let dateFilteredData = [];
@@ -764,14 +770,14 @@
 
         setInterval(() => {
             const now = new Date();
-            const el = document.getElementById('current-time');
-            if(el) el.innerText = now.toLocaleString('en-MY', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+            const timeEl = document.getElementById('current-time');
+            if(timeEl) timeEl.innerText = now.toLocaleString('en-MY', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
         }, 1000);
 
         function showMessageModal(message, title = "Notification") {
             document.getElementById('genericMessageModalTitle').innerText = title;
             document.getElementById('genericMessageModalText').innerHTML = message;
-            document.getElementById('genericModalLinkArea').innerHTML = ''; // reset
+            document.getElementById('genericModalLinkArea').innerHTML = ''; 
             document.getElementById('genericMessageModal').style.display = 'flex';
         }
 
@@ -792,12 +798,15 @@
 
         function logout() {
             showTechLoader("TERMINATING SECURE SESSION...");
-            sessionStorage.removeItem('sungrowUser');
+            localStorage.removeItem('sungrowUser');
             setTimeout(() => {
                 window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
-            }, 1000);
+            }, 1200);
         }
 
+        // ==========================================
+        // LOADING OVERLAY FUNCTIONS
+        // ==========================================
         function showTechLoader(message) {
             const overlay = document.getElementById('loading-overlay');
             const subtitle = document.getElementById('loading-subtitle');
@@ -812,6 +821,9 @@
             if (subtitle) subtitle.innerText = 'Syncing securely with database...';
         }
 
+        // ==========================================
+        // MODAL EDIT & DELETE FUNCTIONS
+        // ==========================================
         function promptDeleteEngineer(name) {
             document.getElementById('confirmDeleteText').innerHTML = `Are you sure you want to delete engineer <b>${name}</b>?<br>This action cannot be undone.`;
             pendingDeleteAction = { type: 'engineer', name: name };
@@ -931,7 +943,7 @@
                     
                     if (oldName === loggedInUser.name) {
                         loggedInUser.name = newName;
-                        sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
+                        localStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
                         document.getElementById('sidebar-user-name').innerText = newName;
                         document.getElementById('sidebar-user-initial').innerText = newName.substring(0, 2).toUpperCase();
                     }
@@ -989,11 +1001,9 @@
             btn.innerHTML = originalText; btn.disabled = false;
         }
 
-        function safeParseJSON(str) {
-            if (!str || typeof str !== 'string' || str.trim() === '') return null;
-            try { return JSON.parse(str); } catch (e) { return null; }
-        }
-
+        // ==========================================
+        // UTILITY FUNCTIONS
+        // ==========================================
         function getJobStatusBadge(status) {
             const s = status ? status.toLowerCase() : '';
             if (s.includes('completed')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">${status}</span>`;
@@ -1007,7 +1017,7 @@
             if (s === 'pending') return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-200">Pending</span>`;
             return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 border border-slate-200">Draft</span>`;
         }
-        function ticketNoOf(row) { return row.APACTicketNo || row.GSPTicketNo || row.C4ID || '-'; }
+        function ticketNoOf(row) { return row.APACTicketNo || row.GSPTicketNo || '-'; }
         function starDisplayHtml(rating) {
             const r = parseFloat(rating);
             if (!r || isNaN(r)) return '<span class="text-slate-400 text-xs">Not rated yet</span>';
@@ -1015,24 +1025,6 @@
             for (let i = 1; i <= 5; i++) html += i <= r ? '★' : '<span class="empty">★</span>';
             html += `</span> <span class="text-xs text-slate-500">(${r}/5)</span>`;
             return html;
-        }
-        
-        function formatJsonLog(str) {
-            const parsed = safeParseJSON(str);
-            if (Array.isArray(parsed)) {
-                if (parsed.length === 0) return '-';
-                return parsed.map(item => {
-                    if (typeof item === 'object') {
-                        return Object.entries(item).map(([k,v]) => `<span class="text-slate-500">${k}:</span> <span class="font-medium">${v}</span>`).join(' | ');
-                    }
-                    return item;
-                }).join('<br><div class="border-b border-slate-200 my-1"></div>');
-            } else if (parsed && typeof parsed === 'object') {
-                if (Object.keys(parsed).length === 0) return '-';
-                return Object.entries(parsed).map(([k,v]) => `<span class="text-slate-500">${k}:</span> <span class="font-medium">${v}</span>`).join('<br>');
-            }
-            if(!str || str.trim() === '') return '-';
-            return str.substring(0, 150) + (str.length > 150 ? '...' : '');
         }
 
         function toggleSidebar() {
@@ -1046,7 +1038,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const sessionStr = sessionStorage.getItem('sungrowUser');
+            // --- SESSION CONTROL & RBAC ---
+            const sessionStr = localStorage.getItem('sungrowUser');
             if (!sessionStr) {
                 window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
                 return;
@@ -1063,9 +1056,13 @@
             document.getElementById('sidebar-user-name').innerText = loggedInUser.name;
             document.getElementById('sidebar-user-role').innerText = loggedInUser.role || 'Engineer';
 
+            // Filter Tabs on Settings
             if (!isManager) {
                 document.getElementById('btn-set-proj').style.display = 'none';
-                document.getElementById('add-engineer-block').style.display = 'none';
+                document.getElementById('btn-set-eng').style.display = 'none';
+                switchSettingsTab('account'); // Default for Engineer
+            } else {
+                switchSettingsTab('engineer'); // Default for Manager
             }
 
             Chart.defaults.font.family = 'Inter, sans-serif';
@@ -1097,7 +1094,6 @@
                 if (charts.client) charts.client.update(); 
                 if (charts.equipment) charts.equipment.update();
                 if (charts.sparePart) charts.sparePart.update();
-                if (charts.task) charts.task.update();
             }
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
@@ -1130,23 +1126,78 @@
             });
         }
 
+        // ==========================================
+        // FETCH REFERENCES & CHANGE PASSWORD (SETTINGS TAB)
+        // ==========================================
         function switchSettingsTab(view) {
+            const accView = document.getElementById('settings-account-view');
             const engView = document.getElementById('settings-engineer-view');
             const projView = document.getElementById('settings-project-view');
+            
+            const btnAcc = document.getElementById('btn-set-acc');
             const btnEng = document.getElementById('btn-set-eng');
             const btnProj = document.getElementById('btn-set-proj');
 
-            if (view === 'engineer') {
+            const activeClass = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
+            const inactiveClass = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
+
+            if(btnAcc) btnAcc.className = inactiveClass;
+            if(btnEng) btnEng.className = inactiveClass;
+            if(btnProj) btnProj.className = inactiveClass;
+
+            accView.classList.add('hidden');
+            engView.classList.add('hidden');
+            projView.classList.add('hidden');
+            accView.classList.remove('grid');
+            engView.classList.remove('grid');
+            projView.classList.remove('flex');
+
+            if (view === 'account') {
+                accView.classList.remove('hidden');
+                accView.classList.add('grid');
+                if(btnAcc) btnAcc.className = activeClass;
+            } else if (view === 'engineer') {
                 engView.classList.remove('hidden');
-                projView.classList.add('hidden');
-                btnEng.className = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
-                btnProj.className = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
-            } else {
-                engView.classList.add('hidden');
+                engView.classList.add('grid');
+                if(btnEng) btnEng.className = activeClass;
+            } else if (view === 'project') {
                 projView.classList.remove('hidden');
-                btnProj.className = "px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shrink-0";
-                btnEng.className = "px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0";
+                projView.classList.add('flex');
+                if(btnProj) btnProj.className = activeClass;
             }
+        }
+
+        async function updatePassword() {
+            const newPass = document.getElementById('acc-new-pass').value.trim();
+            const confPass = document.getElementById('acc-conf-pass').value.trim();
+
+            if (!newPass || !confPass) return showMessageModal("Please fill in all password fields.", "Error");
+            if (newPass !== confPass) return showMessageModal("Passwords do not match! Please check again.", "Error");
+
+            const btn = document.getElementById('btn-update-pass');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Updating...'; 
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'change_password', username: loggedInUser.name, newPassword: newPass })
+                });
+                let data;
+                try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
+
+                if (data.status === 'success') {
+                    showMessageModal("Your password has been updated successfully!", "Success");
+                    document.getElementById('acc-new-pass').value = '';
+                    document.getElementById('acc-conf-pass').value = '';
+                } else {
+                    showMessageModal("Error: " + data.message, "Failed");
+                }
+            } catch (err) {
+                showMessageModal("Server error: " + err.message, "Network Error");
+            }
+            btn.innerHTML = originalText; btn.disabled = false;
         }
 
         let projectSearchTerm = '';
@@ -1173,6 +1224,9 @@
             });
         }
 
+        // ==========================================
+        // DYNAMIC DROPDOWN LOGIC (REGION -> PROJECT)
+        // ==========================================
         function extractRegionProjectMap() {
             regionProjectMap = {};
             projectData.forEach(row => {
@@ -1217,7 +1271,7 @@
                     select.disabled = false;
                     select.innerHTML = '<option value="__ADD_NEW__" class="font-bold text-brand-600">➕ Add New Project...</option>';
                     select.value = '__ADD_NEW__';
-                    handleProjectSelection();
+                    handleProjectSelection(); 
                 }
             }
         }
@@ -1807,29 +1861,29 @@
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-50 transition ${isManual ? 'bg-blue-50/40' : ''}">
-                        <td class="px-4 py-3 text-slate-600 text-center">${index + 1}</td>
-                        <td class="px-4 py-3 text-slate-800 font-medium whitespace-nowrap">
+                        <td class="px-4 py-3 text-slate-600 text-center border-r border-slate-100">${index + 1}</td>
+                        <td class="px-4 py-3 text-slate-800 font-medium whitespace-nowrap border-r border-slate-100">
                             ${row.formattedDate}
                             ${dayBadge}
                         </td>
-                        <td class="px-4 py-3 text-brand-600 font-medium text-xs break-all">${row.ticket}</td>
-                        <td class="px-4 py-3 text-slate-800 text-xs">${row.desc}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 text-brand-600 font-medium text-xs break-all border-r border-slate-100">${row.ticket}</td>
+                        <td class="px-4 py-3 text-slate-800 text-xs border-r border-slate-100">${row.desc}</td>
+                        <td class="px-4 py-3 border-r border-slate-100">
                             ${accCell}
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 border-r border-slate-100">
                             <div id="receipt-container-${index}" style="display: ${receiptDisplay};">
                                 <input type="file" id="receipt-file-${index}" accept="image/*,.pdf" class="text-[10px] w-full text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
                             </div>
                             <div id="no-receipt-${index}" class="text-xs text-slate-400 italic" style="display: ${noReceiptDisplay};">Not Required</div>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 border-r border-slate-100">
                             <div class="flex items-center">
                                 <span class="text-xs text-slate-500 mr-1">$</span>
                                 <input type="number" id="price-usd-${index}" value="${defaultPrice}" step="0.5" class="allowance-input text-center font-bold text-slate-800" onchange="calculateAllowanceTotals()" onkeyup="calculateAllowanceTotals()">
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-center border-r border-slate-100">
                             <span id="price-myr-${index}" class="font-bold text-slate-700">0.00</span>
                         </td>
                         <td class="px-4 py-3">
@@ -2366,20 +2420,13 @@
             data.forEach(d => {
                 if (!d.ServiceEngineer) return;
                 const name = d.ServiceEngineer;
-                if (!staffStats[name]) staffStats[name] = { count: 0, pending: 0, parts: 0, ratings: [] };
+                if (!staffStats[name]) staffStats[name] = { count: 0, lastDate: d.ReportDate, ratings: [] };
                 
                 staffStats[name].count++;
-                if ((d.JobStatus || '').toLowerCase() === 'pending') staffStats[name].pending++;
+                if (new Date(d.ReportDate) > new Date(staffStats[name].lastDate)) staffStats[name].lastDate = d.ReportDate;
                 
                 const r = parseFloat(d.ServiceRating);
                 if (!isNaN(r) && r > 0) staffStats[name].ratings.push(r);
-                
-                try {
-                    let spArr = JSON.parse(d.SparePartData);
-                    if (Array.isArray(spArr)) {
-                        spArr.forEach(sp => { if (sp.name) staffStats[name].parts += (parseInt(sp.qty) || 1); });
-                    }
-                } catch(e) {}
             });
 
             const tbody = document.getElementById('staff-table-body');
@@ -2395,30 +2442,36 @@
                             <div class="flex flex-col"><span class="text-sm">${staff.name.split(' (')[0]}</span><span class="text-[10px] text-slate-500">${staff.name.includes('(') ? '(' + staff.name.split('(')[1] : ''}</span></div>
                         </td>
                         <td class="px-6 py-4 text-center"><span class="bg-blue-50 text-brand-600 font-bold px-3 py-1 rounded-full border border-blue-100">${staff.count}</span></td>
-                        <td class="px-6 py-4 text-center"><span class="${staff.pending > 0 ? 'text-red-500 font-bold border border-red-100 bg-red-50 px-2 py-0.5 rounded' : 'text-slate-400'}">${staff.pending}</span></td>
-                        <td class="px-6 py-4 text-center font-bold text-blue-600">${staff.parts}</td>
                         <td class="px-6 py-4 text-center text-yellow-600 font-bold">${avgR === '-' ? '-' : avgR + ' <i class="fa-solid fa-star text-[10px]"></i>'}</td>
+                        <td class="px-6 py-4 text-slate-500 font-mono text-xs">${staff.lastDate || '-'}</td>
                     </tr>`;
             });
 
             if (charts.staff) charts.staff.destroy();
             charts.staff = new Chart(document.getElementById('staffChart').getContext('2d'), {
                 type: 'bar',
-                data: { labels: staffArray.map(s => s.name.split(' (')[0]), datasets: [{ label: 'Jobs Completed', data: staffArray.map(s => s.count), backgroundColor: '#0ea5e9', borderRadius: 4 }] },
+                data: { labels: staffArray.map(s => s.name.split(' (')[0]), datasets: [{ label: 'Jobs Completed', data: staffArray.map(s => s.count), backgroundColor: '#3b82f6', borderRadius: 4 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
             });
 
-            // 3. Task Distribution
-            const taskStats = {};
-            data.forEach(d => { 
-                const t = d.Task || 'Unspecified';
-                taskStats[t] = (taskStats[t] || 0) + 1; 
-            });
-            if (charts.task) charts.task.destroy();
-            charts.task = new Chart(document.getElementById('taskChart').getContext('2d'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(taskStats), datasets: [{ data: Object.values(taskStats), backgroundColor: ['#0ea5e9', '#a855f7', '#10b981', '#f59e0b', '#f43f5e'], borderWidth: 0, hoverOffset: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }, cutout: '65%' }
+            // 3. Project Distribution Pie
+            const projStats = {};
+            data.forEach(d => { if (d.PlantName) projStats[d.PlantName] = (projStats[d.PlantName] || 0) + 1; });
+            let projArr = Object.keys(projStats).map(c => ({ name: c, count: projStats[c] })).sort((a,b) => b.count - a.count);
+            let labels = [], counts = [];
+            if (projArr.length > 5) {
+                labels = projArr.slice(0,4).map(c => c.name.substring(0, 15) + (c.name.length > 15 ? '...' : ''));
+                counts = projArr.slice(0,4).map(c => c.count);
+                const others = projArr.slice(4).reduce((sum, c) => sum + c.count, 0);
+                labels.push('Others'); counts.push(others);
+            } else {
+                labels = projArr.map(c => c.name); counts = projArr.map(c => c.count);
+            }
+            if (charts.client) charts.client.destroy();
+            charts.client = new Chart(document.getElementById('clientChart').getContext('2d'), {
+                type: 'pie',
+                data: { labels: labels, datasets: [{ data: counts, backgroundColor: ['#0ea5e9', '#a855f7', '#10b981', '#f59e0b', '#64748b'], borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
 
             // 4. Top Equipment Models
@@ -2446,9 +2499,9 @@
                 data: { 
                     labels: topEq.map(e => e.name.length > 20 ? e.name.substring(0,20)+'...' : e.name), 
                     datasets: [{ 
-                        label: 'Times Serviced', 
+                        label: 'Frequency of Reports', 
                         data: topEq.map(e => e.count), 
-                        backgroundColor: '#a855f7', 
+                        backgroundColor: '#ef4444', 
                         borderRadius: 4 
                     }] 
                 },
@@ -2505,26 +2558,6 @@
                         x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } } 
                     } 
                 }
-            });
-
-            // 6. Project Distribution Pie
-            const projStats = {};
-            data.forEach(d => { if (d.PlantName) projStats[d.PlantName] = (projStats[d.PlantName] || 0) + 1; });
-            let projArr = Object.keys(projStats).map(c => ({ name: c, count: projStats[c] })).sort((a,b) => b.count - a.count);
-            let labels = [], counts = [];
-            if (projArr.length > 5) {
-                labels = projArr.slice(0,4).map(c => c.name.substring(0, 15) + (c.name.length > 15 ? '...' : ''));
-                counts = projArr.slice(0,4).map(c => c.count);
-                const others = projArr.slice(4).reduce((sum, c) => sum + c.count, 0);
-                labels.push('Others'); counts.push(others);
-            } else {
-                labels = projArr.map(c => c.name); counts = projArr.map(c => c.count);
-            }
-            if (charts.client) charts.client.destroy();
-            charts.client = new Chart(document.getElementById('clientChart').getContext('2d'), {
-                type: 'pie',
-                data: { labels: labels, datasets: [{ data: counts, backgroundColor: ['#f59e0b', '#0ea5e9', '#10b981', '#a855f7', '#64748b'], borderWidth: 2, borderColor: '#ffffff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
         }
 
