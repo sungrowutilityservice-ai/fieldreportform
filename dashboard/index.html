@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,6 +42,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         @keyframes scan { 0% { top: -10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 110%; opacity: 0; } }
         .tech-logo { animation: pulse-glow 2s infinite ease-in-out; }
         @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 40px rgba(14, 165, 233, 0.8); transform: scale(1.05); } }
@@ -54,9 +55,20 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* Auth Blocking Screen */
+        #auth-block-screen { position: fixed; inset: 0; background: #0f172a; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Inter', sans-serif; display:none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Auth Block Screen -->
+    <div id="auth-block-screen">
+        <i class="fa-solid fa-shield-halved text-5xl text-brand-500 mb-4"></i>
+        <h2 class="text-2xl font-bold mb-2">Access Denied</h2>
+        <p class="text-slate-400 mb-6 text-center max-w-sm" id="auth-block-msg">Please login through the main form portal to access the dashboard.</p>
+        <a href="index.html" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-lg font-medium transition">Back to Login</a>
+    </div>
 
     <!-- Modal Notification -->
     <div id="genericMessageModal" class="modal-overlay" style="display:none;">
@@ -84,15 +96,19 @@
     <!-- Modal Edit Engineer -->
     <div id="editEngineerModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
-            <h2 class="text-lg font-bold text-slate-800 mb-4">Update Engineer</h2>
+            <h2 class="text-lg font-bold text-slate-800 mb-4" id="edit-eng-title">Update Engineer</h2>
             <input type="hidden" id="edit-eng-oldname">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                 <input type="text" id="edit-eng-newname" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
             </div>
-            <div class="mb-6">
+            <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Position</label>
                 <input type="text" id="edit-eng-newpos" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-700 mb-1">New Password <span class="text-xs text-slate-400 font-normal">(Leave blank to keep current)</span></label>
+                <input type="text" id="edit-eng-newpass" placeholder="Enter new password..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
             </div>
             <div class="flex gap-3">
                 <button onclick="closeEditModals()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition flex-1">Cancel</button>
@@ -159,7 +175,6 @@
         </div>
     </div>
 
-
     <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity" onclick="toggleSidebar()"></div>
 
     <aside id="sidebar" class="w-64 bg-slate-900 text-white flex-col shadow-xl z-40 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex">
@@ -202,19 +217,22 @@
             </button>
         </nav>
 
-        <div class="px-4 pb-4 flex flex-col gap-2">
-            <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-red-500/30 shadow-sm">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
-            </button>
-            <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/" class="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
+        <div class="px-4 pb-4">
+            <a href="index.html" class="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
                 <i class="fa-solid fa-arrow-left-long"></i><span>Back to Form</span>
             </a>
         </div>
 
         <div class="p-4 border-t border-slate-800">
-            <div class="flex items-center space-x-3">
-                <div id="sidebar-user-initial" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold">U</div>
-                <div class="text-sm"><p id="sidebar-user-name" class="font-medium">User</p><p id="sidebar-user-role" class="text-xs text-slate-400">Role</p></div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white"><i class="fa-solid fa-user"></i></div>
+                    <div class="text-sm">
+                        <p class="font-medium truncate max-w-[120px]" id="sidebar-user-name">Loading...</p>
+                        <p class="text-xs text-slate-400" id="sidebar-user-role">-</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors p-2" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </div>
         <div class="px-4 py-3 bg-slate-950 text-center text-[10px] text-slate-500 border-t border-slate-800">&copy; 2026 All Right Reserved by Sungrow</div>
@@ -256,7 +274,8 @@
             </div>
         </header>
 
-        <div id="loading-overlay" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center">
+        <!-- SECURE SECURE LOADER OVERLAY -->
+        <div id="loading-overlay" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center" style="display:none;">
             <div class="relative flex items-center justify-center mb-8 mt-[-50px]">
                 <div class="absolute rounded-full border-t-2 border-r-2 border-brand-500 animate-spin" style="width: 140px; height: 140px;"></div>
                 <div class="absolute rounded-full border-b-2 border-l-2 border-brand-300 animate-[spin_3s_linear_reverse]" style="width: 160px; height: 160px;"></div>
@@ -383,25 +402,73 @@
 
             <!-- TAB 4: PERFORMANCE -->
             <div id="tab-performance" class="tab-content">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-base font-semibold text-slate-800 mb-4">Jobs Completed by Service Engineer</h3>
-                        <div class="relative h-72 w-full"><canvas id="staffChart"></canvas></div>
+                <!-- KPI Analytics Row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div><p class="text-[11px] font-medium text-slate-500 mb-0.5 uppercase tracking-wide">Avg Job Duration</p><h3 class="text-xl font-bold text-slate-800" id="perf-kpi-duration">-</h3></div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Projects Distribution</h3>
-                        <div class="relative h-72 w-full"><canvas id="clientChart"></canvas></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-server"></i></div>
+                        <div><p class="text-[11px] font-medium text-slate-500 mb-0.5 uppercase tracking-wide">Equipments Serviced</p><h3 class="text-xl font-bold text-slate-800" id="perf-kpi-equip">-</h3></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        <div><p class="text-[11px] font-medium text-slate-500 mb-0.5 uppercase tracking-wide">Parts Replaced</p><h3 class="text-xl font-bold text-slate-800" id="perf-kpi-spare">-</h3></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div><p class="text-[11px] font-medium text-slate-500 mb-0.5 uppercase tracking-wide">Total Pending</p><h3 class="text-xl font-bold text-slate-800" id="perf-kpi-pending">-</h3></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50"><h3 class="text-base font-semibold text-slate-800">Service Engineer Workload Summary</h3></div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-slate-500 uppercase bg-slate-50">
-                                <tr><th class="px-6 py-3 font-medium">Service Engineer</th><th class="px-6 py-3 font-medium text-center">Total Jobs</th><th class="px-6 py-3 font-medium text-center">Avg Rating</th><th class="px-6 py-3 font-medium">Recent Job Date</th></tr>
-                            </thead>
-                            <tbody id="staff-table-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
+
+                <!-- Row 1: Engineer & Task -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Jobs Completed by Engineer</h3>
+                        <div class="relative h-64 w-full"><canvas id="staffChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Job Distribution by Task</h3>
+                        <div class="relative h-64 w-full"><canvas id="taskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Equipment & Spare Parts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Equipment Models Serviced (from Database)</h3>
+                        <div class="relative h-64 w-full"><canvas id="equipChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Consumed Spare Parts (by Quantity)</h3>
+                        <div class="relative h-64 w-full"><canvas id="spareChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Client & Workload Table Side by Side (Removed Reason Chart) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 lg:col-span-1">
+                        <h3 class="text-base font-semibold text-slate-800 mb-4">Top Projects Distribution</h3>
+                        <div class="relative h-64 w-full"><canvas id="clientChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-2">
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50"><h3 class="text-base font-semibold text-slate-800">Detailed Engineer Workload Summary</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-6 py-3 font-medium">Service Engineer</th>
+                                        <th class="px-6 py-3 font-medium text-center">Total Jobs</th>
+                                        <th class="px-6 py-3 font-medium text-center text-amber-600">Pending Jobs</th>
+                                        <th class="px-6 py-3 font-medium text-center text-indigo-600">Parts Handled</th>
+                                        <th class="px-6 py-3 font-medium text-center">Avg Rating</th>
+                                        <th class="px-6 py-3 font-medium">Recent Job Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-table-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -558,8 +625,8 @@
                 <div id="settings-engineer-view" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                            <h3 class="text-base font-semibold text-slate-800">Engineer List</h3>
-                            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">Total: <span id="total-engineers">0</span></span>
+                            <h3 class="text-base font-semibold text-slate-800" id="engineer-list-title">Engineer List</h3>
+                            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200" id="engineer-total-badge">Total: <span id="total-engineers">0</span></span>
                         </div>
                         <div class="overflow-y-auto max-h-96">
                             <table class="w-full text-sm text-left">
@@ -577,7 +644,7 @@
                         </div>
                     </div>
 
-                    <div id="add-engineer-block" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit" id="settings-add-engineer-panel">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                             <h3 class="text-base font-semibold text-slate-800">Add New Engineer</h3>
                         </div>
@@ -603,7 +670,7 @@
                 <div id="settings-project-view" class="flex flex-col gap-6 hidden">
                     
                     <!-- Form Tambah Projek Berada di Atas -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="settings-add-project-panel">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                             <h3 class="text-base font-semibold text-slate-800">Add New Project / Equipment Record</h3>
                         </div>
@@ -672,7 +739,7 @@
                                         <th class="px-6 py-3 font-medium whitespace-nowrap">Region</th>
                                         <th class="px-6 py-3 font-medium whitespace-nowrap">Product Model</th>
                                         <th class="px-6 py-3 font-medium whitespace-nowrap">Serial Number</th>
-                                        <th class="px-6 py-3 font-medium text-right whitespace-nowrap">Action</th>
+                                        <th class="px-6 py-3 font-medium text-right whitespace-nowrap" id="th-action-project">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="settings-project-body" class="divide-y divide-slate-100">
@@ -694,7 +761,7 @@
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?output=csv'; 
         const ENGINEER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
         const PROJECT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv';
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6ywxtAASVOLQkwwa-MEq8MM9eqBouiUKC4XmelkHLzKdg2eKMb6E6JVTFLuVd4T-Q/exec'; 
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCVq8HcslebxdgBmi9y9a9eiScaW-kn6kmtOTPawP64uE2-ygZLeqUPQl1sY8GkA8v/exec'; 
 
         let globalData = [];
         let dateFilteredData = [];
@@ -707,15 +774,58 @@
         let generatedClaimRows = []; 
         
         let pendingDeleteAction = null; 
-
-        // --- SESSION VARIABLES ---
-        let loggedInUser = null;
-        let isManager = false;
+        let currentUser = null;
 
         setInterval(() => {
             const now = new Date();
             document.getElementById('current-time').innerText = now.toLocaleString('en-MY', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
         }, 1000);
+
+        // ==========================================
+        // AUTHENTICATION & ROLE MANAGEMENT
+        // ==========================================
+        function checkAuth() {
+            const stored = localStorage.getItem('sungrow_user');
+            const blockScreen = document.getElementById('auth-block-screen');
+            const blockMsg = document.getElementById('auth-block-msg');
+
+            if (!stored) {
+                blockScreen.style.display = 'flex';
+                return false;
+            }
+
+            currentUser = JSON.parse(stored);
+
+            if (currentUser.role === 'Service Partner') {
+                blockMsg.innerText = "Service Partners do not have authorization to view the dashboard.";
+                blockScreen.style.display = 'flex';
+                return false;
+            }
+
+            // Update UI Profile
+            document.getElementById('sidebar-user-name').innerText = currentUser.name;
+            document.getElementById('sidebar-user-role').innerText = currentUser.role;
+
+            applyRoleRestrictions();
+            return true;
+        }
+
+        function applyRoleRestrictions() {
+            if (currentUser.role === 'Engineer') {
+                // Settings Restrictions
+                document.getElementById('settings-add-engineer-panel').style.display = 'none';
+                document.getElementById('settings-add-project-panel').style.display = 'none';
+                document.getElementById('btn-set-eng').innerText = 'My Profile';
+                document.getElementById('engineer-list-title').innerText = 'My Profile Details';
+                document.getElementById('engineer-total-badge').style.display = 'none';
+                document.getElementById('th-action-project').style.display = 'none'; // Hide project action column header
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('sungrow_user');
+            window.location.href = 'index.html';
+        }
 
         function showMessageModal(message, title = "Notification") {
             document.getElementById('genericMessageModalTitle').innerText = title;
@@ -737,11 +847,6 @@
         
         function closeGenericMessageModal() {
             document.getElementById('genericMessageModal').style.display = 'none';
-        }
-
-        function logout() {
-            sessionStorage.removeItem('sungrowUser');
-            window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
         }
 
         // ==========================================
@@ -825,19 +930,8 @@
         function promptEditEngineer(name, position) {
             document.getElementById('edit-eng-oldname').value = name;
             document.getElementById('edit-eng-newname').value = name;
-            
-            const posInput = document.getElementById('edit-eng-newpos');
-            posInput.value = position || '';
-            
-            // Lock jawatan jika bukan Manager
-            if (!isManager) {
-                posInput.readOnly = true;
-                posInput.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
-            } else {
-                posInput.readOnly = false;
-                posInput.classList.remove('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
-            }
-            
+            document.getElementById('edit-eng-newpos').value = position || '';
+            document.getElementById('edit-eng-newpass').value = '';
             document.getElementById('editEngineerModal').style.display = 'flex';
         }
 
@@ -864,6 +958,7 @@
             const oldName = document.getElementById('edit-eng-oldname').value;
             const newName = document.getElementById('edit-eng-newname').value.trim();
             const newPos = document.getElementById('edit-eng-newpos').value.trim();
+            const newPass = document.getElementById('edit-eng-newpass').value.trim();
             if(!newName) return showMessageModal("Name cannot be left blank.");
 
             const btn = document.getElementById('btn-save-eng');
@@ -873,7 +968,7 @@
             try {
                 const res = await fetch(APP_SCRIPT_URL, { 
                     method: 'POST', 
-                    body: JSON.stringify({ action: 'edit_engineer', oldName: oldName, newName: newName, newPosition: newPos }) 
+                    body: JSON.stringify({ action: 'edit_engineer', oldName: oldName, newName: newName, newPosition: newPos, newPassword: newPass }) 
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -882,14 +977,13 @@
                 if(data.status === 'success') {
                     showMessageModal(data.message, "Success");
                     
-                    // Kalau yang diedit itu dirinya sendiri, kemaskini nama di sidebar dan session
-                    if (oldName === loggedInUser.name) {
-                        loggedInUser.name = newName;
-                        sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
-                        document.getElementById('sidebar-user-name').innerText = newName;
-                        document.getElementById('sidebar-user-initial').innerText = newName.substring(0, 2).toUpperCase();
+                    // If an engineer changes their own name, update local storage
+                    if (currentUser.name === oldName) {
+                        currentUser.name = newName;
+                        localStorage.setItem('sungrow_user', JSON.stringify(currentUser));
+                        document.getElementById('sidebar-user-name').innerText = currentUser.name;
                     }
-
+                    
                     fetchReferences();
                 } else {
                     showMessageModal("Error: " + data.message, "Failed");
@@ -980,39 +1074,59 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- SESSION CONTROL & RBAC ---
-            const sessionStr = sessionStorage.getItem('sungrowUser');
-            if (!sessionStr) {
-                // Tiada maklumat login, tendang ke index
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
-                return;
-            }
-            loggedInUser = JSON.parse(sessionStr);
-            const roleStr = (loggedInUser.role || '').toLowerCase();
-            if (roleStr.includes('partner')) {
-                // Tendang Service Partner keluar
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
-                return;
-            }
-            isManager = roleStr.includes('manager');
-
-            // Apply Sidebar User Info
-            document.getElementById('sidebar-user-initial').innerText = loggedInUser.name.substring(0, 2).toUpperCase();
-            document.getElementById('sidebar-user-name').innerText = loggedInUser.name;
-            document.getElementById('sidebar-user-role').innerText = loggedInUser.role || 'Engineer';
-
-            // Sembunyikan elemen terlarang jika bukan Manager
-            if (!isManager) {
-                document.getElementById('btn-set-proj').style.display = 'none';
-                document.getElementById('add-engineer-block').style.display = 'none';
-            }
-            // -----------------------
-
             Chart.defaults.font.family = 'Inter, sans-serif';
             Chart.defaults.color = '#64748b';
-            fetchData();
-            fetchReferences();
+            
+            if(checkAuth()) {
+                fetchData();
+                fetchReferences();
+            }
         });
+
+        /**
+         * Securely processes database JSON fields, such as `[{"model":"A"},{"model":"B"}]` 
+         * or fallback plain comma-separated strings to avoid errors.
+         */
+        function safeParseJSONList(str) {
+            if (!str) return [];
+            let clean = String(str).trim();
+            if (!clean) return [];
+            
+            try {
+                if (clean.includes("'") && !clean.includes('"')) {
+                    clean = clean.replace(/'/g, '"');
+                }
+                if (clean.startsWith('[') && clean.endsWith(']')) {
+                    return JSON.parse(clean);
+                }
+            } catch (e) {
+                console.warn("Retrying regex extraction for JSON list: ", clean);
+            }
+
+            if (clean.includes('{') && clean.includes('}')) {
+                let extracted = [];
+                let objRegex = /\{([^}]+)\}/g;
+                let match;
+                while ((match = objRegex.exec(clean)) !== null) {
+                    let objStr = match[1];
+                    let item = {};
+                    let kvRegex = /"([^"]+)"\s*:\s*"([^"]+)"/g;
+                    let kvMatch;
+                    while ((kvMatch = kvRegex.exec(objStr)) !== null) {
+                        item[kvMatch[1]] = kvMatch[2];
+                    }
+                    let numKvRegex = /"([^"]+)"\s*:\s*(\d+)/g;
+                    while ((kvMatch = numKvRegex.exec(objStr)) !== null) {
+                        item[kvMatch[1]] = kvMatch[2];
+                    }
+                    if (Object.keys(item).length > 0) {
+                        extracted.push(item);
+                    }
+                }
+                if (extracted.length > 0) return extracted;
+            }
+            return clean.split(/[,;\n]/).map(s => s.trim()).filter(s => s && s !== '-' && s.toLowerCase() !== 'none' && s.toLowerCase() !== 'n/a');
+        }
 
         function switchTab(tabId) {
             const titles = { overview: 'Overview Dashboard', monitoring: 'Job Monitoring', issues: 'Pending Jobs & Issues', performance: 'Engineer & Plant Performance', documents: 'Document & Approval', allowance: 'Allowance & Claims', settings: 'System Settings' };
@@ -1032,7 +1146,14 @@
                     ? "nav-btn w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg bg-brand-600 text-white transition-colors shadow-md"
                     : "nav-btn w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors";
             });
-            if (tabId === 'performance') { if (charts.staff) charts.staff.update(); if (charts.client) charts.client.update(); }
+            
+            if (tabId === 'performance') { 
+                if (charts.staff) charts.staff.update(); 
+                if (charts.client) charts.client.update(); 
+                if (charts.task) charts.task.update();
+                if (charts.equip) charts.equip.update();
+                if (charts.spare) charts.spare.update();
+            }
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
                 if (!sidebar.classList.contains('-translate-x-full')) toggleSidebar();
@@ -1046,15 +1167,13 @@
                 complete: function(results) {
                     globalData = results.data;
                     
-                    // --- ROLE-BASED FILTERING UNTUK DASHBOARD DATA ---
-                    if (!isManager) {
+                    // ROLE FILTERING: If Engineer, filter global data exclusively to their jobs
+                    if (currentUser && currentUser.role === 'Engineer') {
                         globalData = globalData.filter(row => {
-                            const engList = row.ServiceEngineer || '';
-                            // Hanya simpan rekod yang ada mengandungi nama dia
-                            return engList.includes(loggedInUser.name);
+                            const engStr = row.ServiceEngineer || '';
+                            return engStr.includes(currentUser.name);
                         });
                     }
-                    // -------------------------------------------------
 
                     globalData.sort((a, b) => new Date(b.Timestamp || b.ReportDate) - new Date(a.Timestamp || a.ReportDate));
                     applyGlobalFilters();
@@ -1093,7 +1212,7 @@
         let projectCurrentPage = 1;
         const projectItemsPerPage = 20;
         let filteredProjectData = [];
-        let regionProjectMap = {}; // Untuk simpan hierarki Region -> Project
+        let regionProjectMap = {}; 
 
         function fetchReferences() {
             Papa.parse(ENGINEER_CSV_URL, {
@@ -1107,8 +1226,8 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
                     projectData = results.data;
-                    extractRegionProjectMap(); // Proses dropdown sebelum render jadual
-                    filterProjects(); // Triggers render automatically
+                    extractRegionProjectMap(); 
+                    filterProjects(); 
                 }
             });
         }
@@ -1157,11 +1276,10 @@
                 select.disabled = true;
                 if(!region) select.innerHTML = '<option value="">-- Select Region First --</option>';
                 else {
-                    // Situasi Region adalah baharu (baru ditaip), maka project WAJIB baharu
                     select.disabled = false;
                     select.innerHTML = '<option value="__ADD_NEW__" class="font-bold text-brand-600">➕ Add New Project...</option>';
                     select.value = '__ADD_NEW__';
-                    handleProjectSelection(); // Auto trigger input box for project
+                    handleProjectSelection(); 
                 }
             }
         }
@@ -1175,7 +1293,6 @@
                 populateProjectDropdown('__NEW_CUSTOM_REGION__');
             } else {
                 populateProjectDropdown(val);
-                // Reset project input if it was open
                 document.getElementById('project-input-wrapper').classList.add('hidden');
                 document.getElementById('project-select-wrapper').classList.remove('hidden');
             }
@@ -1209,7 +1326,6 @@
                 
                 const currentReg = document.getElementById('new-proj-region-select').value;
                 if(currentReg === '__ADD_NEW__') {
-                    // Jika batal letak project tapi region memang baru, cancel terus region
                     cancelCustomInput('region');
                 }
             }
@@ -1220,28 +1336,23 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             let count = 0;
-            
-            // Filter senarai engineer jika bukan manager
-            let renderData = engineerData;
-            if (!isManager) {
-                renderData = engineerData.filter(r => r.Engineer === loggedInUser.name);
-            }
-
-            renderData.forEach(row => {
+            engineerData.forEach(row => {
                 if(row.Engineer && row.Engineer.trim() !== '') {
+                    // Filter: Engineers only see themselves
+                    if (currentUser && currentUser.role === 'Engineer' && row.Engineer !== currentUser.name) return;
+
                     count++;
+                    let actionBtns = `<button onclick="promptEditEngineer('${row.Engineer}', '${row.Position || ''}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="${currentUser.role === 'Engineer' ? 'Update Profile' : 'Update'}"><i class="fa-solid fa-pen"></i></button>`;
                     
-                    // Hilangkan butang Delete jika bukan manager
-                    const deleteBtnHtml = isManager ? `<button onclick="promptDeleteEngineer('${row.Engineer}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>` : '';
+                    if (currentUser && currentUser.role !== 'Engineer') {
+                        actionBtns += `<button onclick="promptDeleteEngineer('${row.Engineer}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
+                    }
 
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50">
                             <td class="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">${row.Engineer}</td>
                             <td class="px-6 py-3 text-slate-600">${row.Position || '-'}</td>
-                            <td class="px-6 py-3 text-right whitespace-nowrap">
-                                <button onclick="promptEditEngineer('${row.Engineer}', '${row.Position || ''}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="Update"><i class="fa-solid fa-pen"></i></button>
-                                ${deleteBtnHtml}
-                            </td>
+                            <td class="px-6 py-3 text-right whitespace-nowrap">${actionBtns}</td>
                         </tr>
                     `;
                 }
@@ -1273,7 +1384,6 @@
             }
             
             let buttonsHtml = '';
-            // For simplicity, showing all pages if small, or simple loop
             const maxButtons = 5;
             let startBtn = Math.max(1, projectCurrentPage - 2);
             let endBtn = Math.min(totalPages, startBtn + maxButtons - 1);
@@ -1303,7 +1413,6 @@
             const tbody = document.getElementById('settings-project-body');
             if (!tbody) return;
 
-            // Apply search
             filteredProjectData = projectData.filter(row => {
                 const keys = Object.keys(row);
                 const pKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
@@ -1311,7 +1420,6 @@
                 const mKey = keys.find(k => k.toLowerCase().includes('product model')) || 'Product Model';
                 const sKey = keys.find(k => k.toLowerCase().includes('serial') || k.toLowerCase().includes('product code')) || 'Product Code/Serial';
                 
-                // Normalizing keys to ensure direct access works in other functions
                 row['Project Name'] = row[pKey] || '';
                 row['Region'] = row[rKey] || '';
                 row['Product Model'] = row[mKey] || '';
@@ -1322,7 +1430,7 @@
                 const mod = row['Product Model'];
                 const ser = row['Product Code/Serial'];
 
-                if(!pName && !mod && !ser) return false; // Skip entirely empty rows
+                if(!pName && !mod && !ser) return false; 
 
                 if (!projectSearchTerm) return true;
 
@@ -1334,7 +1442,6 @@
 
             document.getElementById('total-projects').innerText = filteredProjectData.length;
 
-            // Pagination
             const totalPages = Math.ceil(filteredProjectData.length / projectItemsPerPage);
             if(projectCurrentPage > totalPages) projectCurrentPage = totalPages || 1;
             const startIndex = (projectCurrentPage - 1) * projectItemsPerPage;
@@ -1347,12 +1454,21 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">No project or equipment records found.</td></tr>`;
             } else {
                 pageData.forEach((row, indexInPage) => {
-                    const globalIndex = startIndex + indexInPage; // Need exact index in filteredProjectData for modals
+                    const globalIndex = startIndex + indexInPage; 
                     const pName = row['Project Name'];
                     const reg = row['Region'];
                     const mod = row['Product Model'];
                     const ser = row['Product Code/Serial'];
                     
+                    let actionColHtml = '';
+                    if (currentUser && currentUser.role !== 'Engineer') {
+                        actionColHtml = `
+                            <td class="px-6 py-3 text-right whitespace-nowrap opacity-50 group-hover:opacity-100 transition-opacity">
+                                <button onclick="promptEditEquipment(${globalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded transition" title="Edit Record"><i class="fa-solid fa-pen text-xs"></i></button>
+                                <button onclick="promptDeleteEquipment(${globalIndex})" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded ml-1 transition" title="Delete Record"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </td>`;
+                    }
+
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
                             <td class="px-6 py-3 text-slate-400 text-xs">${globalIndex + 1}</td>
@@ -1360,10 +1476,7 @@
                             <td class="px-6 py-3 text-slate-600 text-xs">${reg || '-'}</td>
                             <td class="px-6 py-3 text-slate-800 font-medium whitespace-nowrap">${mod || '-'}</td>
                             <td class="px-6 py-3 text-slate-600 text-xs font-mono">${ser || '-'}</td>
-                            <td class="px-6 py-3 text-right whitespace-nowrap opacity-50 group-hover:opacity-100 transition-opacity">
-                                <button onclick="promptEditEquipment(${globalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded transition" title="Edit Record"><i class="fa-solid fa-pen text-xs"></i></button>
-                                <button onclick="promptDeleteEquipment(${globalIndex})" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded ml-1 transition" title="Delete Record"><i class="fa-solid fa-trash text-xs"></i></button>
-                            </td>
+                            ${actionColHtml}
                         </tr>
                     `;
                 });
@@ -1407,13 +1520,11 @@
         }
 
         async function submitNewProject() {
-            // Ambil Region (dari dropdown ATAU custom input)
             const regionSelect = document.getElementById('new-proj-region-select').value;
             const regionInput = document.getElementById('new-proj-region-input').value.trim();
             const isCustomRegion = document.getElementById('region-select-wrapper').classList.contains('hidden');
             const region = isCustomRegion ? regionInput : regionSelect;
 
-            // Ambil Project Name (dari dropdown ATAU custom input)
             const projSelect = document.getElementById('new-proj-name-select').value;
             const projInput = document.getElementById('new-proj-name-input').value.trim();
             const isCustomProject = document.getElementById('project-select-wrapper').classList.contains('hidden');
@@ -1448,7 +1559,6 @@
                     document.getElementById('new-proj-model').value = '';
                     document.getElementById('new-proj-serial').value = '';
                     
-                    // Reset dropdown custom forms back to select mode, but retain the values by reloading
                     cancelCustomInput('region');
                     fetchReferences();
                 } else {
@@ -1497,7 +1607,7 @@
             }
 
             if (projVal) {
-                filtered = filtered.filter(row => row.PlantName === projVal); // Assuming Google Sheet report data still stores under PlantName
+                filtered = filtered.filter(row => row.PlantName === projVal); 
             }
 
             dateFilteredData = filtered;
@@ -1652,9 +1762,14 @@
         async function generateAllowanceClaim() {
             const startVal = document.getElementById('claim-start').value; 
             const endVal = document.getElementById('claim-end').value; 
-            const selectedEngineer = document.getElementById('claim-engineer').value;
+            let selectedEngineer = document.getElementById('claim-engineer').value;
             const tbody = document.getElementById('allowance-table-body');
             
+            // Override engineer selection if the user is an Engineer
+            if (currentUser && currentUser.role === 'Engineer') {
+                selectedEngineer = currentUser.name;
+            }
+
             if (!startVal && !endVal) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500">Please select Start and End Dates to generate the claims table.</td></tr>`;
                 document.getElementById('allowance-date-subtitle').innerText = "Date: -";
@@ -1679,7 +1794,7 @@
             generatedClaimRows = [];
 
             globalData.forEach(row => {
-                if (selectedEngineer && row.ServiceEngineer !== selectedEngineer) return;
+                if (selectedEngineer && !(row.ServiceEngineer || '').includes(selectedEngineer)) return;
 
                 const startStr = row.ServiceJobDateFrom || row.ReportDate;
                 const endStr = row.ServiceJobDateTo || startStr;
@@ -1831,7 +1946,9 @@
 
             const startVal = document.getElementById('claim-start').value;
             const endVal = document.getElementById('claim-end').value;
-            const engineerInput = document.getElementById('claim-engineer') ? document.getElementById('claim-engineer').value : '';
+            
+            let engineerInput = document.getElementById('claim-engineer') ? document.getElementById('claim-engineer').value : '';
+            if (currentUser && currentUser.role === 'Engineer') engineerInput = currentUser.name;
             
             if(startVal || endVal) {
                 const displayDate = getAllowanceDateDisplay();
@@ -1886,11 +2003,7 @@
             return receipts;
         }
 
-        function generateExcelBase64() {
-            const subtitleEl = document.getElementById('allowance-date-subtitle');
-            const dateText = subtitleEl ? subtitleEl.innerText : 'Claims';
-            const exchangeRate = document.getElementById('exchange-rate').value;
-            
+        function createStyledWorksheet(dateText, exchangeRate) {
             let exportData = [];
             exportData.push(["ETS Business Trip Summary"]);
             exportData.push([dateText]);
@@ -1918,11 +2031,82 @@
             });
             
             exportData.push([]);
-            exportData.push(["", "", "", "", "Total (USD):", totalU.toFixed(2), "", ""]);
-            exportData.push(["", "", "", "", "Total (MYR):", "", totalM.toFixed(2), ""]);
+            exportData.push(["", "", "", "", "Total (USD):", totalU, "", ""]);
+            exportData.push(["", "", "", "", "Total (MYR):", "", totalM, ""]);
             exportData.push(["", "", "", "", "Exchange Rate:", `1 USD = ${exchangeRate} MYR`, "", ""]);
             
             const ws = XLSX.utils.aoa_to_sheet(exportData);
+            
+            const dataRowCount = generatedClaimRows.length;
+            
+            // Set column widths
+            ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 18 }, { wch: 35 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
+            
+            // Define border styles
+            const borderThin = { style: "thin", color: { auto: 1 } };
+            const borderAll = { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin };
+
+            // Apply styles to cells
+            for (let R = 0; R < exportData.length; ++R) {
+                for (let C = 0; C <= 7; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                    let cell = ws[cellRef];
+                    
+                    // Create cell if missing within the table to ensure border is drawn completely
+                    if (!cell && R >= 3 && R < 4 + dataRowCount) {
+                        ws[cellRef] = { t: 's', v: '' };
+                        cell = ws[cellRef];
+                    }
+                    
+                    if (!cell) continue;
+                    if (!cell.s) cell.s = {}; 
+
+                    // Styling Title
+                    if (R === 0 && C === 0) cell.s = { font: { bold: true, sz: 14 } };
+                    
+                    // Styling Date Info
+                    if (R === 1 && C === 0) cell.s = { font: { bold: true, color: { rgb: "555555" } } };
+                    
+                    // Styling Table Headers
+                    if (R === 3) {
+                        cell.s = { font: { bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, border: borderAll, alignment: { horizontal: "center", vertical: "center" } };
+                    }
+                    
+                    // Styling Table Data
+                    if (R >= 4 && R < 4 + dataRowCount) {
+                        cell.s.border = borderAll;
+                        cell.s.alignment = { vertical: "center" };
+                        if (C === 0 || C === 1) cell.s.alignment.horizontal = "center";
+                        
+                        // Set number formatting for Money Columns
+                        if (C === 5 || C === 6) {
+                             cell.t = 'n'; 
+                             cell.z = "#,##0.00";
+                        }
+                    }
+                    
+                    // Styling Footer (Totals)
+                    if (R > 4 + dataRowCount) {
+                        if (C === 4 || C === 5 || C === 6) {
+                            cell.s.font = { bold: true };
+                            if (typeof cell.v === 'number') {
+                                cell.t = 'n';
+                                cell.z = "#,##0.00";
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return ws;
+        }
+
+        function generateExcelBase64() {
+            const subtitleEl = document.getElementById('allowance-date-subtitle');
+            const dateText = subtitleEl ? subtitleEl.innerText : 'Claims';
+            const exchangeRate = document.getElementById('exchange-rate').value;
+            
+            const ws = createStyledWorksheet(dateText, exchangeRate);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Allowances");
             return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
@@ -1968,7 +2152,9 @@
         }
 
         async function submitClaimToSystem() {
-            const engineer = document.getElementById('claim-engineer').value;
+            let engineer = document.getElementById('claim-engineer').value;
+            if (currentUser && currentUser.role === 'Engineer') engineer = currentUser.name;
+
             if (!engineer) {
                 return showMessageModal("Please select a specific Service Engineer before submitting claims.", "Error");
             }
@@ -2040,26 +2226,8 @@
             const subtitleEl = document.getElementById('allowance-date-subtitle');
             const dateText = subtitleEl ? subtitleEl.innerText : 'Claims';
             const exchangeRate = document.getElementById('exchange-rate').value;
-            let exportData = [];
-            exportData.push(["ETS Business Trip Summary"]);
-            exportData.push([dateText]);
-            exportData.push([]); 
-            exportData.push(["No", "Date", "GSP Ticket Number", "Job Description", "Accommodation", "Price (USD)", "Price (MYR)", "Remark"]);
-            let totalU = 0, totalM = 0;
-            generatedClaimRows.forEach((row, index) => {
-                const accEl = document.getElementById(`acc-${index}`);
-                const acc = row.isManual ? 'Manual' : (accEl ? accEl.options[accEl.selectedIndex].text : '');
-                const usd = parseFloat(document.getElementById(`price-usd-${index}`).value) || 0;
-                const myr = parseFloat(document.getElementById(`price-myr-${index}`).innerText) || 0;
-                const remark = document.getElementById(`remark-${index}`).value || '';
-                totalU += usd; totalM += myr;
-                exportData.push([ index + 1, row.formattedDate, row.ticket, row.desc, acc, usd, myr, remark ]);
-            });
-            exportData.push([]);
-            exportData.push(["", "", "", "", "Total (USD):", totalU.toFixed(2), "", ""]);
-            exportData.push(["", "", "", "", "Total (MYR):", "", totalM.toFixed(2), ""]);
-            exportData.push(["", "", "", "", "Exchange Rate:", `1 USD = ${exchangeRate} MYR`, "", ""]);
-            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            
+            const ws = createStyledWorksheet(dateText, exchangeRate);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Allowances");
             XLSX.writeFile(wb, "Sungrow_ETS_Summary.xlsx");
@@ -2159,7 +2327,11 @@
             
             data.forEach(d => { 
                 if (d.JobStatus) statuses.add(d.JobStatus); 
-                if (d.ServiceEngineer) engineers.add(d.ServiceEngineer);
+                if (d.ServiceEngineer) {
+                    // Split if there are multiple engineers
+                    const engList = d.ServiceEngineer.split(',').map(e => e.trim()).filter(e => e);
+                    engList.forEach(e => engineers.add(e));
+                }
                 if (d.PlantName) projects.add(d.PlantName);
             });
             
@@ -2171,12 +2343,10 @@
 
             const engSelect = document.getElementById('claim-engineer');
             if (engSelect) {
-                // Kalau bukan manager, kunci pilihan pada diri sendiri sahaja
-                if (!isManager) {
-                    engSelect.innerHTML = `<option value="${loggedInUser.name}">${loggedInUser.name}</option>`;
-                    engSelect.value = loggedInUser.name;
-                    engSelect.disabled = true;
-                    engSelect.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
+                if (currentUser && currentUser.role === 'Engineer') {
+                    engSelect.innerHTML = `<option value="${currentUser.name}">${currentUser.name}</option>`;
+                    engSelect.value = currentUser.name;
+                    engSelect.disabled = true; // Lock dropdown for engineer
                 } else {
                     const currentEng = engSelect.value;
                     engSelect.innerHTML = '<option value="">All Engineers</option>';
@@ -2255,58 +2425,192 @@
 
         function renderPerformance(data) {
             const staffStats = {};
+            const projStats = {};
+            const equipStats = {};
+            const taskStats = {};
+            const spareStats = {};
+
+            let totalDays = 0, durationCount = 0, totalEquips = 0, totalSpares = 0, totalPending = 0;
+
+            // 1. DATA AGGREGATION & COMPLEX PARSING
             data.forEach(d => {
-                if (!d.ServiceEngineer) return;
-                const name = d.ServiceEngineer;
-                if (!staffStats[name]) staffStats[name] = { count: 0, lastDate: d.ReportDate, ratings: [] };
-                staffStats[name].count++;
-                if (new Date(d.ReportDate) > new Date(staffStats[name].lastDate)) staffStats[name].lastDate = d.ReportDate;
-                const r = parseFloat(d.ServiceRating);
-                if (!isNaN(r) && r > 0) staffStats[name].ratings.push(r);
+                const isPending = (d.JobStatus || '').toLowerCase() === 'pending' || (d.PendingReason && d.PendingReason.trim() !== '' && d.PendingReason.trim() !== '-');
+                if(isPending) totalPending++;
+
+                // Parse complex array structures for Equipments
+                const rawEquip = d.EquipmentData || d.ProductModel || '';
+                const parsedEquips = safeParseJSONList(rawEquip);
+                let equipmentsRowCounter = 0;
+                
+                parsedEquips.forEach(item => {
+                    let modelName = '';
+                    if (item && typeof item === 'object') {
+                        modelName = item.model || item.ProductModel || '';
+                    } else {
+                        modelName = String(item);
+                    }
+                    modelName = modelName.trim();
+                    if (modelName && modelName !== '-') {
+                        equipStats[modelName] = (equipStats[modelName] || 0) + 1;
+                        totalEquips++;
+                        equipmentsRowCounter++;
+                    }
+                });
+
+                // Parse complex array structures for Spare Parts & sum the actual Qty
+                const rawSpare = d.SparePartData || d.SparePartConsumption || '';
+                const parsedSpares = safeParseJSONList(rawSpare);
+                let sparesQuantityRowCounter = 0;
+
+                parsedSpares.forEach(item => {
+                    let partName = '';
+                    let qty = 1;
+                    if (item && typeof item === 'object') {
+                        partName = item.name || item.partName || '';
+                        qty = parseInt(item.qty) || parseInt(item.quantity) || 1;
+                    } else {
+                        partName = String(item);
+                    }
+                    partName = partName.trim();
+                    if (partName && partName !== '-') {
+                        spareStats[partName] = (spareStats[partName] || 0) + qty;
+                        totalSpares += qty;
+                        sparesQuantityRowCounter += qty;
+                    }
+                });
+
+                // Engineer Workload & Performance
+                if (d.ServiceEngineer) {
+                    const engineers = d.ServiceEngineer.split(',').map(e => e.trim()).filter(e => e);
+                    engineers.forEach(name => {
+                        if (!staffStats[name]) staffStats[name] = { count: 0, pending: 0, parts: 0, lastDate: d.ReportDate, ratings: [] };
+                        staffStats[name].count++;
+                        
+                        if(isPending) staffStats[name].pending++;
+                        
+                        if (d.ReportDate && new Date(d.ReportDate) > new Date(staffStats[name].lastDate || '2000-01-01')) {
+                            staffStats[name].lastDate = d.ReportDate;
+                        }
+                        const r = parseFloat(d.ServiceRating);
+                        if (!isNaN(r) && r > 0) staffStats[name].ratings.push(r);
+                        // Distribute parts equally or just assign total to each for metric purposes
+                        staffStats[name].parts += sparesQuantityRowCounter;
+                    });
+                }
+
+                // Top Projects
+                if (d.PlantName) projStats[d.PlantName] = (projStats[d.PlantName] || 0) + 1;
+
+                // Task Project / Job Type Analysis
+                const t = (d.TaskProject || d.Task || 'Unspecified').trim();
+                if(t && t !== '-') taskStats[t] = (taskStats[t] || 0) + 1;
+
+                // Average Job Duration Calculation
+                if(d.ServiceJobDateFrom) {
+                    let start = parseMyDate(d.ServiceJobDateFrom);
+                    let end = parseMyDate(d.ServiceJobDateTo || d.ServiceJobDateFrom);
+                    if(isValidDate(start) && isValidDate(end) && end >= start) {
+                        let diffTime = Math.abs(end - start);
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+                        totalDays += diffDays;
+                        durationCount++;
+                    }
+                }
             });
 
+            // 2. UPDATE TOP KPIs
+            const avgDuration = durationCount ? (totalDays / durationCount).toFixed(1) : '-';
+            document.getElementById('perf-kpi-duration').innerText = avgDuration !== '-' ? `${avgDuration} Days` : '-';
+            document.getElementById('perf-kpi-equip').innerText = totalEquips;
+            document.getElementById('perf-kpi-spare').innerText = totalSpares;
+            document.getElementById('perf-kpi-pending').innerText = totalPending;
+
+            // 3. UPDATE DETAILED WORKLOAD SUMMARY TABLE
             const tbody = document.getElementById('staff-table-body');
             tbody.innerHTML = '';
-            const staffArray = Object.keys(staffStats).map(name => ({ name, ...staffStats[name] })).sort((a,b) => b.count - a.count);
+            
+            // If Engineer, only show their own workload row
+            let staffArray = Object.keys(staffStats).map(name => ({ name, ...staffStats[name] })).sort((a,b) => b.count - a.count);
+            if (currentUser && currentUser.role === 'Engineer') {
+                staffArray = staffArray.filter(s => s.name === currentUser.name);
+            }
 
             staffArray.forEach(staff => {
                 const avgR = staff.ratings.length ? (staff.ratings.reduce((a,b)=>a+b,0) / staff.ratings.length).toFixed(1) : '-';
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
+                    <tr class="hover:bg-slate-50 transition">
                         <td class="px-6 py-4 font-medium text-slate-800 flex items-center">
                             <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold mr-3">${staff.name.charAt(0)}</div>
                             ${staff.name}
                         </td>
                         <td class="px-6 py-4 text-center"><span class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full border border-brand-100">${staff.count}</span></td>
+                        <td class="px-6 py-4 text-center"><span class="bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded border border-red-100">${staff.pending}</span></td>
+                        <td class="px-6 py-4 text-center font-bold text-indigo-600">${staff.parts}</td>
                         <td class="px-6 py-4 text-center text-yellow-600 font-medium">${avgR === '-' ? '-' : avgR + ' ★'}</td>
-                        <td class="px-6 py-4 text-slate-500">${staff.lastDate || '-'}</td>
+                        <td class="px-6 py-4 text-slate-500 text-xs">${staff.lastDate || '-'}</td>
                     </tr>`;
             });
 
+            // 4. CHART RENDERING HELPER
+            const pieColors = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#64748b', '#ef4444', '#06b6d4', '#f43f5e', '#14b8a6'];
+            
+            function getChartData(statObj, topN = 6) {
+                let arr = Object.keys(statObj).map(k => ({ name: k, count: statObj[k] })).sort((a,b) => b.count - a.count);
+                let labels = [], counts = [];
+                if (arr.length > topN) {
+                    labels = arr.slice(0, topN).map(c => c.name.length > 25 ? c.name.substring(0, 25) + '...' : c.name);
+                    counts = arr.slice(0, topN).map(c => c.count);
+                    const others = arr.slice(topN).reduce((sum, c) => sum + c.count, 0);
+                    labels.push('Others'); counts.push(others);
+                } else {
+                    labels = arr.map(c => c.name.length > 25 ? c.name.substring(0, 25) + '...' : c.name);
+                    counts = arr.map(c => c.count);
+                }
+                return { labels, counts };
+            }
+
+            // A. Engineer Workload Chart (Bar)
             if (charts.staff) charts.staff.destroy();
             charts.staff = new Chart(document.getElementById('staffChart').getContext('2d'), {
                 type: 'bar',
-                data: { labels: staffArray.map(s => s.name.split(' ')[0]), datasets: [{ label: 'Jobs Handled', data: staffArray.map(s => s.count), backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                data: { labels: staffArray.map(s => s.name.split(' ')[0]), datasets: [{ label: 'Total Jobs', data: staffArray.map(s => s.count), backgroundColor: '#0ea5e9', borderRadius: 4 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4] } }, x: { grid: { display: false } } } }
             });
 
-            const projStats = {};
-            data.forEach(d => { if (d.PlantName) projStats[d.PlantName] = (projStats[d.PlantName] || 0) + 1; });
-            let projArr = Object.keys(projStats).map(c => ({ name: c, count: projStats[c] })).sort((a,b) => b.count - a.count);
-            let labels = [], counts = [];
-            if (projArr.length > 5) {
-                labels = projArr.slice(0,5).map(c => c.name.substring(0, 15) + (c.name.length > 15 ? '...' : ''));
-                counts = projArr.slice(0,5).map(c => c.count);
-                const others = projArr.slice(5).reduce((sum, c) => sum + c.count, 0);
-                labels.push('Others'); counts.push(others);
-            } else {
-                labels = projArr.map(c => c.name); counts = projArr.map(c => c.count);
-            }
+            // B. Task Distribution Chart (Doughnut)
+            const taskData = getChartData(taskStats, 6);
+            if (charts.task) charts.task.destroy();
+            charts.task = new Chart(document.getElementById('taskChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: taskData.labels, datasets: [{ data: taskData.counts, backgroundColor: pieColors, borderWidth: 0, hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }, cutout: '60%' }
+            });
+
+            // C. Top Equipment Serviced (Horizontal Bar)
+            const eqData = getChartData(equipStats, 6);
+            if (charts.equip) charts.equip.destroy();
+            charts.equip = new Chart(document.getElementById('equipChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: eqData.labels, datasets: [{ label: 'Times Serviced', data: eqData.counts, backgroundColor: '#8b5cf6', borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { borderDash: [4, 4] } }, y: { grid: { display: false } } } }
+            });
+
+            // D. Top Consumed Spare Parts (Bar)
+            const spData = getChartData(spareStats, 6);
+            if (charts.spare) charts.spare.destroy();
+            charts.spare = new Chart(document.getElementById('spareChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: spData.labels, datasets: [{ label: 'Quantity Consumed', data: spData.counts, backgroundColor: '#f59e0b', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4] } }, x: { grid: { display: false } } } }
+            });
+
+            // E. Top Projects (Pie)
+            const projectChartData = getChartData(projStats, 5);
             if (charts.client) charts.client.destroy();
             charts.client = new Chart(document.getElementById('clientChart').getContext('2d'), {
                 type: 'pie',
-                data: { labels: labels, datasets: [{ data: counts, backgroundColor: ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#64748b', '#cbd5e1'], borderWidth: 2, borderColor: '#ffffff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } }
+                data: { labels: projectChartData.labels, datasets: [{ data: projectChartData.counts, backgroundColor: pieColors, borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
         }
 
@@ -2329,7 +2633,7 @@
                 document.execCommand('copy');
                 if (btnElement) {
                     const originalHtml = btnElement.innerHTML;
-                    btnElement.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-500"></i> Copied Successfully';
+                    btnElement.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-500"></i> Copied';
                     btnElement.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
                     btnElement.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
                     setTimeout(() => {
