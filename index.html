@@ -85,6 +85,7 @@
         .multi-select-dropdown label { display: flex; align-items: center; padding: 6px 10px; margin: 0; cursor: pointer; border-bottom: 1px solid #ecf0f1; color: #2c3e50; font-weight: normal !important; font-size:12px; }
         .multi-select-dropdown label:hover { background: #f0f8ff; }
         .multi-select-dropdown input[type="checkbox"] { margin-right: 8px; cursor: pointer; width: auto !important; }
+        .multi-select-dropdown input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.5; }
 
         .btn-clear-sig { background: #e74c3c; color: white; border: none; padding: 4px 8px; font-size: 10px; border-radius: 4px; cursor: pointer; margin-top: 5px; float: right; }
 
@@ -206,42 +207,46 @@
 
         @media print {
             body { background-color: white; height: auto; overflow: visible; display: block; }
-            .editor-panel, .print-btn, .btn-save-draft, .btn-dashboard, .logout-btn { display: none !important; }
+            .editor-panel, .print-btn, .btn-save-draft, .btn-dashboard { display: none !important; }
             .preview-panel { padding: 0; background: none; display: block; }
             #export-container { display: block; gap: 0; transform: none !important; margin: 0 !important; }
             .a4-page { box-shadow: none; margin: 0; width: 100%; height: 296mm; border: none; page-break-after: always; padding: 10mm 15mm; overflow: hidden; }
             @page { margin: 0; size: A4; }
         }
-
-        #loginModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--color-bg-app); z-index: 100002; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .login-box { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .login-box h2 { text-align: center; margin-bottom: 20px; color: var(--color-bg-app); }
-        .login-box input, .login-box select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; background: white; font-family: inherit; }
-        .login-box button { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .login-box button:hover { background: #2980b9; }
-        .login-error { color: #e74c3c; font-size: 12px; text-align: center; margin-bottom: 15px; font-weight: bold; min-height: 15px; }
-        .logout-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .logout-btn:hover { background: #c0392b; }
     </style>
 </head>
 <body>
 
-    <div id="loginModal" style="display:none;">
-        <div class="login-box">
-            <div style="text-align:center; margin-bottom:20px;">
-                <img src="https://i.postimg.cc/QdHVGGj7/image.png" alt="Sungrow Logo" style="width:70px;">
+    <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay" class="modal-overlay" style="z-index: 999999; background: var(--color-bg-app); display: flex;">
+        <div class="modal-content" style="max-width: 350px; text-align: center; padding: 30px;">
+            <img src="https://i.postimg.cc/QdHVGGj7/image.png" alt="Sungrow" style="width: 70px; margin: 0 auto 15px;">
+            <h2 style="color: #2c3e50; font-size: 18px; margin-bottom: 5px;">Service Portal Login</h2>
+            <p style="font-size: 11px; color: #7f8c8d; margin-bottom: 20px;">Please enter your credentials to access the form.</p>
+            
+            <div class="input-group" style="text-align: left; margin-bottom: 15px;">
+                <label style="color: #34495e;">Profile / Name</label>
+                <select id="loginUsername" style="padding: 10px; font-size: 13px; width: 100%; border: 1px solid #bdc3c7; border-radius: 4px; outline: none;">
+                    <option value="">-- Loading profiles... --</option>
+                </select>
             </div>
-            <h2>System Login</h2>
-            <div class="login-error" id="loginError"></div>
-            <select id="loginUsername">
-                <option value="">-- Loading database... --</option>
-            </select>
-            <input type="password" id="loginPassword" placeholder="Password">
-            <button id="btnLogin" onclick="executeLogin()">Login</button>
+            <div class="input-group" style="text-align: left; margin-bottom: 20px;">
+                <label style="color: #34495e;">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password" style="padding: 10px; font-size: 13px; width: 100%; border: 1px solid #bdc3c7; border-radius: 4px; outline: none;">
+            </div>
+            
+            <button id="btnLoginAction" onclick="performLogin()" style="background: #3498db; width: 100%; padding: 12px; font-size: 14px;">Login</button>
+            <div id="loginMsg" style="font-size: 11px; color: #e74c3c; margin-top: 10px; min-height: 15px; font-weight:bold;"></div>
+
+            <!-- Temporary Bypass Info for Testing -->
+            <div style="margin-top:20px; font-size:10px; color:#95a5a6; padding-top:10px; border-top:1px dashed #ecf0f1;">
+                <strong>Temporary Test Access:</strong><br>
+                Please select the temporary accounts in the dropdown to test UI.
+            </div>
         </div>
     </div>
 
-    <div id="techLoader">
+    <div id="techLoader" style="display:none;">
         <div class="tech-loader-content">
             <div class="tech-ring tech-ring-1"></div>
             <div class="tech-ring tech-ring-2"></div>
@@ -280,21 +285,16 @@
     <div class="editor-panel">
 
         <div class="editor-header" onclick="toggleForm()">
-            <div class="editor-title">📝 Fill Form Details</div>
+            <div class="editor-title" id="formMainTitle">📝 Fill Form Details</div>
             <div id="toggleIcon" class="toggle-icon">Hide ▲</div>
         </div>
 
-        <div id="formContentWrapper" style="display:block;">
+        <div id="formContentWrapper" style="display:none;"> <!-- Hidden initially, shown after login -->
 
-            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard" id="btnGoDashboard" style="flex: 1; margin-bottom: 0;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                    Go to Dashboard
-                </a>
-                <button onclick="executeLogout()" class="logout-btn" title="Logout">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                </button>
-            </div>
+            <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/dashboard/" class="btn-dashboard" id="btnGoToDashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                Go to Dashboard
+            </a>
 
             <div class="search-ticket-box">
                 <label style="font-size: 11px; font-weight: bold; color: #2c3e50; display:block; margin-bottom:5px;">Search & Fetch Draft Data (APAC/GSP Ticket No. or Report ID)</label>
@@ -362,7 +362,7 @@
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
 
             <div class="input-group">
-                <label>Equipment Details (Product Model / Material Code / Serial No.)</label>
+                <label>Equipment Details (Product Model / Product Code / Serial No.)</label>
                 <div id="equipmentEditorContainer"></div>
                 <button type="button" class="btn-add-row" onclick="addEquipmentRow()">+ Add Equipment</button>
             </div>
@@ -436,7 +436,7 @@
             </button>
 
             <button id="downloadBtn" class="print-btn" style="background-color: #e74c3c;" onclick="generatePDF()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Download as PDF
             </button>
 
@@ -475,7 +475,7 @@
                 <div class="section-box" style="overflow: hidden;">
                     <div class="section-title">Equipment Details</div>
                     <table class="data-table">
-                        <thead><tr><th style="width:40%;">Product Model</th><th style="width:30%;">Material Code</th><th style="width:30%;">Serial Number</th></tr></thead>
+                        <thead><tr><th style="width:40%;">Product Model</th><th style="width:30%;">Product Code</th><th style="width:30%;">Serial Number</th></tr></thead>
                         <tbody id="v_equipment_table"></tbody>
                     </table>
                 </div>
@@ -554,11 +554,9 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz6ywxtAASVOLQkwwa-MEq8MM9eqBouiUKC4XmelkHLzKdg2eKMb6E6JVTFLuVd4T-Q/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyCVq8HcslebxdgBmi9y9a9eiScaW-kn6kmtOTPawP64uE2-ygZLeqUPQl1sY8GkA8v/exec";
         const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
         const EQUIPMENT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv";
-
-        let loggedInUser = { name: '', role: '' };
 
         const templateHeaderHTML = `
             <div class="report-header">
@@ -568,6 +566,85 @@
             </div>
         `;
 
+        // ==========================================
+        // AUTHENTICATION & LOGIN LOGIC
+        // ==========================================
+        let currentUser = null;
+
+        function checkAuth() {
+            const stored = localStorage.getItem('sungrow_user');
+            if (stored) {
+                currentUser = JSON.parse(stored);
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('formContentWrapper').style.display = 'block';
+                applyRoleRestrictions();
+                
+                // Pre-fill engineer dropdown if it's already loaded
+                if (document.getElementById('engineer-dropdown').innerHTML.trim() !== '') {
+                    autoSelectCurrentUser();
+                }
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('formContentWrapper').style.display = 'none';
+            }
+        }
+
+        function performLogin() {
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value.trim();
+            const msg = document.getElementById('loginMsg');
+            
+            if (!u || !p) { msg.innerText = "Please enter username and password."; return; }
+
+            msg.style.color = "#f39c12"; msg.innerText = "Authenticating...";
+            const btn = document.getElementById('btnLoginAction');
+            btn.disabled = true;
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "login", username: u, password: p })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if(data.status === 'success') {
+                    localStorage.setItem('sungrow_user', JSON.stringify({ name: data.name, role: data.role }));
+                    checkAuth();
+                } else {
+                    msg.style.color = "#e74c3c"; msg.innerText = data.message || "Login failed.";
+                }
+            })
+            .catch(e => {
+                btn.disabled = false;
+                msg.style.color = "#e74c3c"; msg.innerText = "Network error or Login function not yet active in AppScript.";
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('sungrow_user');
+            location.reload();
+        }
+
+        function applyRoleRestrictions() {
+            // Hide Dashboard button for Service Partners
+            if (currentUser.role === 'Service Partner') {
+                const dashBtn = document.getElementById('btnGoToDashboard');
+                if (dashBtn) dashBtn.style.display = 'none';
+            }
+            
+            // Add Logout Button to Header
+            const header = document.getElementById('formMainTitle');
+            if (!document.getElementById('logoutBtn')) {
+                header.innerHTML += ` <span style="font-size:10px; color:#e74c3c; cursor:pointer; margin-left:15px; font-weight:normal; text-decoration:underline;" id="logoutBtn" onclick="logout()">(Logout: ${currentUser.name})</span>`;
+            }
+
+            // Lock Signature Name to Current User
+            document.getElementById('v_engineer_name_sig').innerText = currentUser.name + " (Lead Submitter)";
+        }
+
+        // ==========================================
+        // UI & DROPDOWN LOGIC
+        // ==========================================
         function showTechLoader(text) {
             document.getElementById('techLoadingText').innerText = text || "PROCESSING...";
             document.getElementById('techLoader').style.display = "flex";
@@ -579,12 +656,10 @@
             document.getElementById('genericMessageModalText').innerText = message;
             document.getElementById('genericMessageModal').style.display = 'flex';
         }
-        
         function closeGenericMessageModal() {
             document.getElementById('genericMessageModal').style.display = 'none';
         }
 
-        // Multi-select functionality
         let selectedEngineers = [];
 
         function toggleEngineerSelect() {
@@ -601,13 +676,15 @@
         });
 
         function handleEngineerSelection(checkbox) {
-            if (checkbox.checked) {
-                if (!selectedEngineers.includes(checkbox.value)) {
-                    selectedEngineers.push(checkbox.value);
-                }
-            } else {
-                selectedEngineers = selectedEngineers.filter(e => e !== checkbox.value);
+            // Enforce locking for the logged-in user
+            if (currentUser && checkbox.value === currentUser.name) {
+                checkbox.checked = true; // Prevent unchecking
             }
+
+            selectedEngineers = [];
+            document.querySelectorAll('#engineer-dropdown input[type="checkbox"]:checked').forEach(cb => {
+                selectedEngineers.push(cb.value);
+            });
             updateEngineerUI();
         }
 
@@ -620,7 +697,25 @@
                 textEl.innerText = selectedEngineers.join(', ');
                 textEl.style.color = '#000';
             }
+            // Only update the general report service info, NOT the signature box
             update('v_service_engineer', selectedEngineers.join('\n'));
+        }
+
+        function autoSelectCurrentUser() {
+            if (!currentUser || !currentUser.name) return;
+            const dropdown = document.getElementById('engineer-dropdown');
+            let myCheckbox = dropdown.querySelector(`input[value="${currentUser.name}"]`);
+            
+            if (!myCheckbox) {
+                const lbl = document.createElement('label');
+                lbl.innerHTML = `<input type="checkbox" value="${currentUser.name}"> ${currentUser.name} (You)`;
+                dropdown.insertBefore(lbl, dropdown.firstChild);
+                myCheckbox = lbl.querySelector('input');
+            }
+            
+            myCheckbox.checked = true;
+            myCheckbox.disabled = true; // Visually disable so they know it's locked
+            handleEngineerSelection(myCheckbox); // Trigger the array update
         }
 
         let projectEquipmentDb = {};
@@ -632,42 +727,51 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     const engineerDropdown = document.getElementById('engineer-dropdown');
+                    const loginDropdown = document.getElementById('loginUsername');
                     const engineerSet = new Set();
+                    const rolesMap = {};
+
+                    // Reset login dropdown and remove temporary access
+                    loginDropdown.innerHTML = '<option value="">-- Select Your Profile --</option>';
 
                     results.data.forEach(row => {
                         if (row.Engineer) {
-                            const position = row.Position ? ` (${row.Position})` : '';
-                            const fullName = `${row.Engineer}${position}`;
+                            const fullName = row.Engineer.trim();
+                            const position = row.Position ? row.Position.trim() : 'Engineer'; // Default role
+                            
                             if (!engineerSet.has(fullName)) {
                                 engineerSet.add(fullName);
+                                
+                                // Group by role for Login Dropdown
+                                if (!rolesMap[position]) rolesMap[position] = [];
+                                rolesMap[position].push(fullName);
+
+                                // Add to Form Multi-select Checkboxes
                                 const lbl = document.createElement('label');
-                                
-                                let isManager = (loggedInUser.role || '').toLowerCase().includes('manager');
-                                let isMatch = row.Engineer.toLowerCase() === loggedInUser.name.toLowerCase();
-                                
-                                let checkAttr = '';
-                                let disableAttr = '';
-                                let styleStr = 'color: #2c3e50;';
-
-                                if (isMatch) {
-                                    checkAttr = 'checked';
-                                    if (!selectedEngineers.includes(fullName)) selectedEngineers.push(fullName);
-                                    
-                                    if (!isManager) {
-                                        disableAttr = 'disabled';
-                                        styleStr = 'color: #95a5a6; font-style: italic; font-weight: bold;';
-                                    }
-                                }
-
-                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)" ${checkAttr} ${disableAttr}> <span style="${styleStr}">${fullName}</span>`;
+                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)"> ${fullName}`;
                                 engineerDropdown.appendChild(lbl);
                             }
                         }
                     });
-                    updateEngineerUI();
+
+                    // Append real users to login dropdown grouped by Role
+                    for (const role in rolesMap) {
+                        const optGroup = document.createElement('optgroup');
+                        optGroup.label = role;
+                        rolesMap[role].forEach(name => {
+                            const opt = document.createElement('option');
+                            opt.value = name;
+                            opt.innerText = name;
+                            optGroup.appendChild(opt);
+                        });
+                        loginDropdown.appendChild(optGroup);
+                    }
+                    
+                    if (currentUser) autoSelectCurrentUser();
                 },
                 error: function(err) {
                     console.error("Failed to fetch engineer data from Google Sheet:", err);
+                    document.getElementById('loginUsername').innerHTML = '<option value="">-- Error Loading Profiles --</option>';
                 }
             });
 
@@ -680,7 +784,6 @@
                     projectEquipmentDb = {};
                     
                     results.data.forEach(row => {
-                        // Dynamically find keys in case of trailing spaces in header names
                         const keys = Object.keys(row);
                         const projKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
                         const modelKey = keys.find(k => k.toLowerCase().includes('product model')) || 'Product Model';
@@ -701,69 +804,18 @@
                         }
                     });
                     
-                    // Populate Project Dropdown
                     Object.keys(projectEquipmentDb).sort().forEach(proj => {
                         const optionP = document.createElement('option');
                         optionP.value = proj;
                         optionP.innerText = proj;
                         selectProject.appendChild(optionP);
                     });
-                },
-                error: function(err) {
-                    console.error("Failed to fetch project/equipment data from Google Sheet:", err);
                 }
             });
         }
 
         window.addEventListener('load', () => {
-            showTechLoader("FETCHING USER DATABASE...");
-            fetchEngineersForLogin();
-        });
-
-        function fetchEngineersForLogin() {
-            Papa.parse(ENGINEER_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const loginSelect = document.getElementById('loginUsername');
-                    loginSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
-                    results.data.forEach(row => {
-                        if (row.Engineer) {
-                            const option = document.createElement('option');
-                            option.value = row.Engineer; // Exact name for backend checking
-                            const roleText = row.Position ? row.Position : 'Staff';
-                            option.innerText = `${row.Engineer} (${roleText})`;
-                            loginSelect.appendChild(option);
-                        }
-                    });
-                    checkSessionAndInit();
-                },
-                error: function(err) {
-                    console.error("Failed to load users for login:", err);
-                    document.getElementById('loginUsername').innerHTML = '<option value="">Error loading database</option>';
-                    checkSessionAndInit();
-                }
-            });
-        }
-
-        function checkSessionAndInit() {
-            const storedSession = sessionStorage.getItem('sungrowUser');
-            if (storedSession) {
-                loggedInUser = JSON.parse(storedSession);
-                document.getElementById('loginModal').style.display = 'none';
-                initSystem();
-            } else {
-                setTimeout(() => {
-                    hideTechLoader();
-                    document.getElementById('loginModal').style.display = 'flex';
-                }, 500);
-            }
-        }
-
-        function initSystem() {
             showTechLoader("SYSTEM BOOTING...");
-            applyUserRoles();
             loadDropdownData();
             renderEquipmentEditor();
             renderSparePartEditor();
@@ -772,69 +824,9 @@
                 resizeSigCanvas();
                 applyPreviewScale();
                 hideTechLoader();
+                checkAuth(); // Trigger Authentication Overlay Check
             }, 1200);
-        }
-
-        async function executeLogin() {
-            const user = document.getElementById('loginUsername').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
-            const errEl = document.getElementById('loginError');
-            const btn = document.getElementById('btnLogin');
-
-            if(!user || !pass) { errEl.innerText = "Please enter Name and Password."; return; }
-
-            errEl.innerText = "";
-            btn.innerText = "Verifying...";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'login', username: user, password: pass })
-                });
-                const data = await res.json();
-
-                if(data.status === 'success') {
-                    loggedInUser = data.user;
-                    sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
-                    document.getElementById('loginModal').style.display = 'none';
-                    initSystem();
-                } else {
-                    errEl.innerText = data.message || "Login failed.";
-                    btn.innerText = "Login";
-                    btn.disabled = false;
-                }
-            } catch(e) {
-                errEl.innerText = "Network error. Please try again.";
-                btn.innerText = "Login";
-                btn.disabled = false;
-            }
-        }
-
-        function executeLogout() {
-            sessionStorage.removeItem('sungrowUser');
-            location.reload();
-        }
-
-        function applyUserRoles() {
-            const dashBtn = document.getElementById('btnGoDashboard');
-            const isServicePartner = (loggedInUser.role || '').toLowerCase().includes('partner');
-            
-            if (isServicePartner) {
-                if(dashBtn) dashBtn.style.display = 'none';
-            } else {
-                if(dashBtn) dashBtn.style.display = 'flex';
-            }
-
-            // Lock Signature to logged-in user
-            update('v_engineer_name_sig', loggedInUser.name);
-            
-            // UI Info
-            const titleEl = document.querySelector('.editor-title');
-            if (titleEl && !titleEl.innerHTML.includes(loggedInUser.name)) {
-                titleEl.innerHTML = `📝 Fill Form Details <span style="font-size:10px; color:#7f8c8d; font-weight:normal; margin-left:5px;">(${loggedInUser.name})</span>`;
-            }
-        }
+        });
 
         let equipmentList = [{ model: '', materialCode: '', serialNo: '' }];
 
@@ -850,7 +842,6 @@
                 modelsForProject.forEach(m => {
                     modelOptions += `<option value="${m}" ${eq.model === m ? 'selected' : ''}>${m}</option>`;
                 });
-                // Maintain draft data if it exists but is not in the dropdown list
                 if (eq.model && !modelsForProject.includes(eq.model)) {
                     modelOptions += `<option value="${eq.model}" selected>${eq.model} (Custom/Draft)</option>`;
                 }
@@ -860,7 +851,7 @@
                         <select onchange="updateEquipmentModel(${index}, this.value)" style="flex:1.2; font-size:11px; padding:4px; border:1px solid #bdc3c7; border-radius:3px;">
                             ${modelOptions}
                         </select>
-                        <input type="text" placeholder="Material Code" oninput="updateEquipment(${index}, 'materialCode', this.value)" value="${eq.materialCode}" style="flex:1;">
+                        <input type="text" placeholder="Product Code" oninput="updateEquipment(${index}, 'materialCode', this.value)" value="${eq.materialCode}" style="flex:1;">
                         <input type="text" placeholder="Serial No." oninput="updateEquipment(${index}, 'serialNo', this.value)" value="${eq.serialNo}" style="flex:1;">
                         <button type="button" onclick="removeEquipmentRow(${index})" title="Delete Row">X</button>
                     </div>
@@ -871,23 +862,22 @@
 
         function updateEquipmentModel(index, modelValue) {
             equipmentList[index].model = modelValue;
-            
-            // Auto-fill serial number based on selected model
             const selectedProject = document.getElementById('f_project_name').value;
             if (modelValue && projectEquipmentDb[selectedProject] && projectEquipmentDb[selectedProject][modelValue]) {
-                const serials = projectEquipmentDb[selectedProject][modelValue];
-                equipmentList[index].serialNo = serials.length > 0 ? serials[0] : '';
+                const codes = projectEquipmentDb[selectedProject][modelValue];
+                equipmentList[index].materialCode = codes.length > 0 ? codes[0] : '';
+                equipmentList[index].serialNo = '';
             } else {
+                equipmentList[index].materialCode = '';
                 equipmentList[index].serialNo = '';
             }
-            
             updateEquipmentPreview();
             renderEquipmentEditor();
         }
 
         function handleProjectChange(val) {
             update('v_project_name', val);
-            equipmentList.forEach(eq => { eq.model = ''; eq.serialNo = ''; });
+            equipmentList.forEach(eq => { eq.model = ''; eq.materialCode = ''; eq.serialNo = ''; });
             renderEquipmentEditor();
         }
 
@@ -1007,7 +997,6 @@
             }
             setTimeout(applyPreviewScale, 100);
         }
-        
         function applyPreviewScale() {
             if (document.body.classList.contains('is-exporting')) return;
             const wrapper = document.getElementById('export-container');
@@ -1097,36 +1086,42 @@
             updateJobStatusPreview();
             setFieldValue('f_spare_consumption', dataObj.spareConsumption);
 
-            // Set engineers to checkboxes safely respecting RBAC
-            const dropdown = document.getElementById('engineer-dropdown');
-            const lockedEngineers = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:disabled')).filter(cb => cb.checked).map(cb => cb.value);
-
             if(dataObj.serviceEngineer) {
-                let draftEngineers = dataObj.serviceEngineer.split(',').map(s => s.trim()).filter(s => s !== '');
-                selectedEngineers = [...new Set([...draftEngineers, ...lockedEngineers])];
+                selectedEngineers = dataObj.serviceEngineer.split(',').map(s => s.trim()).filter(s => s !== '');
+                const dropdown = document.getElementById('engineer-dropdown');
+                
+                // Enforce Current User stays
+                if (currentUser && !selectedEngineers.includes(currentUser.name)) {
+                    selectedEngineers.push(currentUser.name);
+                }
 
-                // Check/Uncheck logic
-                const allCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-                allCheckboxes.forEach(cb => {
-                    if (!cb.disabled) cb.checked = selectedEngineers.includes(cb.value);
-                });
-
-                // Add missing checkboxes
                 selectedEngineers.forEach(eng => {
                     let cb = dropdown.querySelector(`input[value="${eng}"]`);
                     if(!cb) {
                         const lbl = document.createElement('label');
-                        lbl.innerHTML = `<input type="checkbox" value="${eng}" onchange="handleEngineerSelection(this)" checked> ${eng}`;
+                        lbl.innerHTML = `<input type="checkbox" value="${eng}"> ${eng}`;
                         dropdown.appendChild(lbl);
+                        cb = lbl.querySelector('input');
+                    }
+                    cb.checked = true;
+                    if (currentUser && eng === currentUser.name) cb.disabled = true;
+                });
+                
+                const allCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+                allCheckboxes.forEach(cb => {
+                    cb.checked = selectedEngineers.includes(cb.value);
+                    if (currentUser && cb.value === currentUser.name) {
+                        cb.checked = true; cb.disabled = true;
                     }
                 });
                 updateEngineerUI();
             } else {
-                selectedEngineers = [...lockedEngineers];
+                selectedEngineers = [];
                 document.querySelectorAll('#engineer-dropdown input[type="checkbox"]').forEach(cb => {
-                    if (!cb.disabled) cb.checked = false;
+                    cb.checked = false;
                 });
-                updateEngineerUI();
+                if (currentUser) autoSelectCurrentUser();
+                else updateEngineerUI();
             }
 
             equipmentList = (dataObj.equipmentData && dataObj.equipmentData.length > 0) ? dataObj.equipmentData : [{ model: '', materialCode: '', serialNo: '' }];
@@ -1168,7 +1163,7 @@
                 apacTicket: document.getElementById('f_apac_ticket').value,
                 c4Id: document.getElementById('f_c4_id').value,
                 gspTicket: document.getElementById('f_gsp_ticket').value,
-                plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
+                plantName: document.getElementById('f_project_name').value, 
                 epcc: document.getElementById('f_epcc').value,
                 reportDate: document.getElementById('f_report_date').value,
                 task: document.getElementById('f_task').value,
@@ -1409,7 +1404,7 @@
                     apacTicket: document.getElementById('f_apac_ticket').value,
                     c4Id: document.getElementById('f_c4_id').value,
                     gspTicket: document.getElementById('f_gsp_ticket').value,
-                    plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
+                    plantName: document.getElementById('f_project_name').value, 
                     epcc: document.getElementById('f_epcc').value,
                     reportDate: document.getElementById('f_report_date').value,
                     task: document.getElementById('f_task').value,
@@ -1471,6 +1466,7 @@
             }
             document.body.removeChild(el);
         }
+        
         function sendToWhatsapp() {
             if (!window.currentApprovalTemplate) return;
             const encodedText = encodeURIComponent(window.currentApprovalTemplate);
