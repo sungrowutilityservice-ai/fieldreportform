@@ -202,7 +202,10 @@
             </button>
         </nav>
 
-        <div class="px-4 pb-4">
+        <div class="px-4 pb-4 flex flex-col gap-2">
+            <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-red-500/30 shadow-sm">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
+            </button>
             <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/" class="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
                 <i class="fa-solid fa-arrow-left-long"></i><span>Back to Form</span>
             </a>
@@ -210,8 +213,8 @@
 
         <div class="p-4 border-t border-slate-800">
             <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold">AD</div>
-                <div class="text-sm"><p class="font-medium">Admin User</p><p class="text-xs text-slate-400">System Admin</p></div>
+                <div id="sidebar-user-initial" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold">U</div>
+                <div class="text-sm"><p id="sidebar-user-name" class="font-medium">User</p><p id="sidebar-user-role" class="text-xs text-slate-400">Role</p></div>
             </div>
         </div>
         <div class="px-4 py-3 bg-slate-950 text-center text-[10px] text-slate-500 border-t border-slate-800">&copy; 2026 All Right Reserved by Sungrow</div>
@@ -574,7 +577,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
+                    <div id="add-engineer-block" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden h-fit">
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                             <h3 class="text-base font-semibold text-slate-800">Add New Engineer</h3>
                         </div>
@@ -705,6 +708,10 @@
         
         let pendingDeleteAction = null; 
 
+        // --- SESSION VARIABLES ---
+        let loggedInUser = null;
+        let isManager = false;
+
         setInterval(() => {
             const now = new Date();
             document.getElementById('current-time').innerText = now.toLocaleString('en-MY', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
@@ -730,6 +737,11 @@
         
         function closeGenericMessageModal() {
             document.getElementById('genericMessageModal').style.display = 'none';
+        }
+
+        function logout() {
+            sessionStorage.removeItem('sungrowUser');
+            window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
         }
 
         // ==========================================
@@ -813,7 +825,19 @@
         function promptEditEngineer(name, position) {
             document.getElementById('edit-eng-oldname').value = name;
             document.getElementById('edit-eng-newname').value = name;
-            document.getElementById('edit-eng-newpos').value = position || '';
+            
+            const posInput = document.getElementById('edit-eng-newpos');
+            posInput.value = position || '';
+            
+            // Lock jawatan jika bukan Manager
+            if (!isManager) {
+                posInput.readOnly = true;
+                posInput.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
+            } else {
+                posInput.readOnly = false;
+                posInput.classList.remove('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
+            }
+            
             document.getElementById('editEngineerModal').style.display = 'flex';
         }
 
@@ -857,6 +881,15 @@
                 closeEditModals();
                 if(data.status === 'success') {
                     showMessageModal(data.message, "Success");
+                    
+                    // Kalau yang diedit itu dirinya sendiri, kemaskini nama di sidebar dan session
+                    if (oldName === loggedInUser.name) {
+                        loggedInUser.name = newName;
+                        sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
+                        document.getElementById('sidebar-user-name').innerText = newName;
+                        document.getElementById('sidebar-user-initial').innerText = newName.substring(0, 2).toUpperCase();
+                    }
+
                     fetchReferences();
                 } else {
                     showMessageModal("Error: " + data.message, "Failed");
@@ -947,6 +980,34 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // --- SESSION CONTROL & RBAC ---
+            const sessionStr = sessionStorage.getItem('sungrowUser');
+            if (!sessionStr) {
+                // Tiada maklumat login, tendang ke index
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                return;
+            }
+            loggedInUser = JSON.parse(sessionStr);
+            const roleStr = (loggedInUser.role || '').toLowerCase();
+            if (roleStr.includes('partner')) {
+                // Tendang Service Partner keluar
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                return;
+            }
+            isManager = roleStr.includes('manager');
+
+            // Apply Sidebar User Info
+            document.getElementById('sidebar-user-initial').innerText = loggedInUser.name.substring(0, 2).toUpperCase();
+            document.getElementById('sidebar-user-name').innerText = loggedInUser.name;
+            document.getElementById('sidebar-user-role').innerText = loggedInUser.role || 'Engineer';
+
+            // Sembunyikan elemen terlarang jika bukan Manager
+            if (!isManager) {
+                document.getElementById('btn-set-proj').style.display = 'none';
+                document.getElementById('add-engineer-block').style.display = 'none';
+            }
+            // -----------------------
+
             Chart.defaults.font.family = 'Inter, sans-serif';
             Chart.defaults.color = '#64748b';
             fetchData();
@@ -984,6 +1045,17 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
                     globalData = results.data;
+                    
+                    // --- ROLE-BASED FILTERING UNTUK DASHBOARD DATA ---
+                    if (!isManager) {
+                        globalData = globalData.filter(row => {
+                            const engList = row.ServiceEngineer || '';
+                            // Hanya simpan rekod yang ada mengandungi nama dia
+                            return engList.includes(loggedInUser.name);
+                        });
+                    }
+                    // -------------------------------------------------
+
                     globalData.sort((a, b) => new Date(b.Timestamp || b.ReportDate) - new Date(a.Timestamp || a.ReportDate));
                     applyGlobalFilters();
                     document.getElementById('loading-overlay').style.display = 'none';
@@ -1148,16 +1220,27 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             let count = 0;
-            engineerData.forEach(row => {
+            
+            // Filter senarai engineer jika bukan manager
+            let renderData = engineerData;
+            if (!isManager) {
+                renderData = engineerData.filter(r => r.Engineer === loggedInUser.name);
+            }
+
+            renderData.forEach(row => {
                 if(row.Engineer && row.Engineer.trim() !== '') {
                     count++;
+                    
+                    // Hilangkan butang Delete jika bukan manager
+                    const deleteBtnHtml = isManager ? `<button onclick="promptDeleteEngineer('${row.Engineer}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>` : '';
+
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50">
                             <td class="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">${row.Engineer}</td>
                             <td class="px-6 py-3 text-slate-600">${row.Position || '-'}</td>
                             <td class="px-6 py-3 text-right whitespace-nowrap">
                                 <button onclick="promptEditEngineer('${row.Engineer}', '${row.Position || ''}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="Update"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="promptDeleteEngineer('${row.Engineer}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                ${deleteBtnHtml}
                             </td>
                         </tr>
                     `;
@@ -2088,11 +2171,19 @@
 
             const engSelect = document.getElementById('claim-engineer');
             if (engSelect) {
-                const currentEng = engSelect.value;
-                engSelect.innerHTML = '<option value="">All Engineers</option>';
-                const sortedEng = Array.from(engineers).sort();
-                sortedEng.forEach(e => { engSelect.innerHTML += `<option value="${e}">${e}</option>`; });
-                engSelect.value = currentEng;
+                // Kalau bukan manager, kunci pilihan pada diri sendiri sahaja
+                if (!isManager) {
+                    engSelect.innerHTML = `<option value="${loggedInUser.name}">${loggedInUser.name}</option>`;
+                    engSelect.value = loggedInUser.name;
+                    engSelect.disabled = true;
+                    engSelect.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
+                } else {
+                    const currentEng = engSelect.value;
+                    engSelect.innerHTML = '<option value="">All Engineers</option>';
+                    const sortedEng = Array.from(engineers).sort();
+                    sortedEng.forEach(e => { engSelect.innerHTML += `<option value="${e}">${e}</option>`; });
+                    engSelect.value = currentEng;
+                }
             }
 
             const projSelect = document.getElementById('global-project');
