@@ -346,7 +346,7 @@
                 <select id="f_task" oninput="update('v_task', this.value)">
                     <option value="">-- Select Task --</option>
                     <option value="Project Delivery">Project Delivery</option>
-                    <option value="After Sales Under Warranty">After Sales Under Warranty</option>
+                    <option value="After Sales Under Warranty">After Sales Out of Warranty</option>
                     <option value="After Sales Out of Warranty">After Sales Out of Warranty</option>
                 </select>
             </div>
@@ -362,7 +362,7 @@
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
 
             <div class="input-group">
-                <label>Equipment Details (Product Model / Material Code / Serial No.)</label>
+                <label>Equipment Details (Product Model / Product Code / Serial No.)</label>
                 <div id="equipmentEditorContainer"></div>
                 <button type="button" class="btn-add-row" onclick="addEquipmentRow()">+ Add Equipment</button>
             </div>
@@ -554,7 +554,7 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-fgb0FuzfFwmAuIxgWFRGSyKY5vydcYxin9IpNC-FEdGrQfqRRsZ8zMNqDCL6ZQw/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwEw5ffJJjnaptPY4LqR0zsc6V6ycspZoplUlT5cBoQK2gn1gDvnmOETbXOUYeLCJ0i/exec";
         const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
         const EQUIPMENT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv";
 
@@ -584,7 +584,6 @@
             document.getElementById('genericMessageModal').style.display = 'none';
         }
 
-        // Multi-select functionality
         let selectedEngineers = [];
 
         function toggleEngineerSelect() {
@@ -748,7 +747,8 @@
         }
 
         function checkSessionAndInit() {
-            const storedSession = sessionStorage.getItem('sungrowUser');
+            // Using localStorage instead of sessionStorage for persistency
+            const storedSession = localStorage.getItem('sungrowUser');
             if (storedSession) {
                 loggedInUser = JSON.parse(storedSession);
                 document.getElementById('loginModal').style.display = 'none';
@@ -796,7 +796,8 @@
 
                 if(data.status === 'success') {
                     loggedInUser = data.user;
-                    sessionStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
+                    // Changed to localStorage to keep user logged in until manual logout
+                    localStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
                     document.getElementById('loginModal').style.display = 'none';
                     initSystem();
                 } else {
@@ -812,7 +813,8 @@
         }
 
         function executeLogout() {
-            sessionStorage.removeItem('sungrowUser');
+            // Remove local persistent data
+            localStorage.removeItem('sungrowUser');
             location.reload();
         }
 
@@ -1170,7 +1172,7 @@
                 apacTicket: document.getElementById('f_apac_ticket').value,
                 c4Id: document.getElementById('f_c4_id').value,
                 gspTicket: document.getElementById('f_gsp_ticket').value,
-                plantName: document.getElementById('f_project_name').value, 
+                plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
                 epcc: document.getElementById('f_epcc').value,
                 reportDate: document.getElementById('f_report_date').value,
                 task: document.getElementById('f_task').value,
@@ -1411,7 +1413,7 @@
                     apacTicket: document.getElementById('f_apac_ticket').value,
                     c4Id: document.getElementById('f_c4_id').value,
                     gspTicket: document.getElementById('f_gsp_ticket').value,
-                    plantName: document.getElementById('f_project_name').value, 
+                    plantName: document.getElementById('f_project_name').value, // payload key is still plantName for backend compatibility
                     epcc: document.getElementById('f_epcc').value,
                     reportDate: document.getElementById('f_report_date').value,
                     task: document.getElementById('f_task').value,
