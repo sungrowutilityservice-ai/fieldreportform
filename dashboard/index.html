@@ -93,7 +93,15 @@
             </div>
             <div class="mb-6">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Position</label>
-                <input type="text" id="edit-eng-newpos" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                <select id="edit-eng-newpos" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                    <option value="">-- Select Position --</option>
+                    <option value="Service Engineer">Service Engineer</option>
+                    <option value="Junior Service Engineer">Junior Service Engineer</option>
+                    <option value="Senior Service Engineer">Senior Service Engineer</option>
+                    <option value="Assistant Service Manager">Assistant Service Manager</option>
+                    <option value="Service Manager">Service Manager</option>
+                    <option value="Service Partner">Service Partner (Subcon)</option>
+                </select>
             </div>
             <div class="flex gap-3">
                 <button onclick="closeEditModals()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium transition flex-1">Cancel</button>
@@ -647,7 +655,15 @@
                             </div>
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Position</label>
-                                <input type="text" id="new-engineer-pos" placeholder="e.g., Senior Engineer" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                                <select id="new-engineer-pos" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 p-2.5">
+                                    <option value="">-- Select Position --</option>
+                                    <option value="Service Engineer">Service Engineer</option>
+                                    <option value="Junior Service Engineer">Junior Service Engineer</option>
+                                    <option value="Senior Service Engineer">Senior Service Engineer</option>
+                                    <option value="Assistant Service Manager">Assistant Service Manager</option>
+                                    <option value="Service Manager">Service Manager</option>
+                                    <option value="Service Partner">Service Partner (Subcon)</option>
+                                </select>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Temporary Password <span class="text-xs text-red-500">*</span></label>
@@ -886,13 +902,24 @@
             document.getElementById('edit-eng-newname').value = name;
             
             const posInput = document.getElementById('edit-eng-newpos');
+            
+            // Allow legacy positions to be selected if they don't exist in the new dropdown
+            let optionExists = Array.from(posInput.options).some(opt => opt.value === position);
+            if (!optionExists && position) {
+                const newOpt = document.createElement('option');
+                newOpt.value = position;
+                newOpt.innerText = position + ' (Legacy Data)';
+                posInput.appendChild(newOpt);
+            }
+            
             posInput.value = position || '';
             
+            // Lock jawatan jika bukan Manager
             if (!isManager) {
-                posInput.readOnly = true;
+                posInput.disabled = true;
                 posInput.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
             } else {
-                posInput.readOnly = false;
+                posInput.disabled = false;
                 posInput.classList.remove('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
             }
             
@@ -2033,7 +2060,13 @@
                     ws[cellRef].s.font = ws[cellRef].s.font || { name: 'Calibri', sz: 11 };
                     ws[cellRef].s.alignment = ws[cellRef].s.alignment || { vertical: 'center' };
 
-                    if (R === 0 && C === 0) ws[cellRef].s.font = { bold: true, sz: 16 };
+                    if (R === 0 && C === 0) {
+                        ws[cellRef].s.font = { bold: true, sz: 16 };
+                        ws[cellRef].s.alignment = { horizontal: 'center', vertical: 'center' };
+                    }
+                    if (R === 1 && C === 0) {
+                        ws[cellRef].s.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+                    }
                     
                     if (R === 3) {
                         ws[cellRef].s.font = { bold: true };
@@ -2073,6 +2106,11 @@
             ];
             
             if (!ws['!merges']) ws['!merges'] = [];
+            // Merge tajuk utama (Baris 1, Lajur A ke H)
+            ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } });
+            // Merge sub-tajuk (Baris 2, Lajur A ke H)
+            ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 7 } });
+            // Merge butiran "Exchange Rate" di footer
             ws['!merges'].push({ s: { r: dataEndRow + 2, c: 5 }, e: { r: dataEndRow + 2, c: 6 } });
 
             const wb = XLSX.utils.book_new();
