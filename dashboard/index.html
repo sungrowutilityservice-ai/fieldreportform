@@ -17,7 +17,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
-    <!-- Menggunakan xlsx-js-style untuk membolehkan styling/border di dalam fail Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -750,7 +749,7 @@
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?output=csv'; 
         const ENGINEER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
         const PROJECT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv';
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEw5ffJJjnaptPY4LqR0zsc6V6ycspZoplUlT5cBoQK2gn1gDvnmOETbXOUYeLCJ0i/exec'; 
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzISi-HpLh6CP-TZsqaOn9vPaLgkwsOifGxftZfEnr219p55bgeD0xJCT5GubCr9eID/exec'; 
 
         let globalData = [];
         let dateFilteredData = [];
@@ -1110,8 +1109,9 @@
                     
                     if (!isManager) {
                         globalData = globalData.filter(row => {
-                            const engList = row.ServiceEngineer || '';
-                            return engList.includes(loggedInUser.name);
+                            const engList = (row.ServiceEngineer || '').toLowerCase();
+                            const myName = loggedInUser.name.toLowerCase().split('(')[0].trim();
+                            return engList.includes(myName);
                         });
                     }
 
@@ -1773,7 +1773,12 @@
             generatedClaimRows = [];
 
             globalData.forEach(row => {
-                if (selectedEngineer && row.ServiceEngineer !== selectedEngineer) return;
+                // LOGIK BARU: Padanan teks penuh kepada separa (Partial String Match)
+                if (selectedEngineer) {
+                    const searchName = selectedEngineer.split('(')[0].trim().toLowerCase();
+                    const dbEngStr = (row.ServiceEngineer || '').toLowerCase();
+                    if (!dbEngStr.includes(searchName)) return; 
+                }
 
                 const startStr = row.ServiceJobDateFrom || row.ReportDate;
                 const endStr = row.ServiceJobDateTo || startStr;
@@ -2287,7 +2292,13 @@
             
             data.forEach(d => { 
                 if (d.JobStatus) statuses.add(d.JobStatus); 
-                if (d.ServiceEngineer) engineers.add(d.ServiceEngineer);
+                // LOGIK BARU: Pisahkan nama jika ianya kerja berkumpulan dan buang pangkat
+                if (d.ServiceEngineer) {
+                    d.ServiceEngineer.split(',').forEach(e => {
+                        const cleanName = e.split('(')[0].trim();
+                        if (cleanName) engineers.add(cleanName);
+                    });
+                }
                 if (d.PlantName) projects.add(d.PlantName);
             });
             
