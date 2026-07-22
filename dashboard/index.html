@@ -471,6 +471,7 @@
                                     <th class="px-6 py-4 font-medium">Approval Status</th>
                                     <th class="px-6 py-4 font-medium">Final PDF</th>
                                     <th class="px-6 py-4 font-medium text-right">Action</th>
+                                    <th class="px-6 py-4 font-medium text-right">Manage</th>
                                 </tr>
                             </thead>
                             <tbody id="document-table-body" class="divide-y divide-slate-100"></tbody>
@@ -608,7 +609,11 @@
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 h-fit">
                         <h3 class="text-base font-semibold text-slate-800 mb-4">Change Password</h3>
                         <p class="text-xs text-slate-500 mb-4">Keep your account secure by updating your password below.</p>
-                        
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
+                            <input type="password" id="acc-old-pass" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Enter your current password">
+                        </div>
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-slate-700 mb-1">New Password</label>
                             <input type="password" id="acc-new-pass" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Enter new password">
@@ -762,10 +767,10 @@
     </main>
 
     <script>
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?output=csv'; 
-        const ENGINEER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv';
-        const PROJECT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv';
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypIUdID03zvyxmxUzFc5Avj4jHXoflLNBTRk2HgCYJfhNVyfqEA_Z-45QWyAjdvSvX/exec'; 
+        // SECURITY: the old public "Publish to Web" CSV URLs (SHEET_CSV_URL / ENGINEER_CSV_URL /
+        // PROJECT_CSV_URL) have been removed entirely - they are no longer referenced anywhere in
+        // this file (all data now goes through APP_SCRIPT_URL's session-gated actions instead).
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzn2A6kzcmxJ45piJQjr952-EBsxWzCcv5Do8VtT8nDoZnFp23oa9pugkyVFiCyH8sV/exec';
 
         let globalData = [];
         let dateFilteredData = [];
@@ -782,6 +787,22 @@
         // --- SESSION VARIABLES ---
         let loggedInUser = null;
         let isManager = false;
+        const SESSION_TTL_HOURS = 12; // must match SESSION_TTL_HOURS in Code.gs
+
+        // SECURITY: escape dynamic text before inserting via innerHTML, to stop stored-XSS from
+        // data that ultimately comes from other people (client feedback, job descriptions, etc).
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        // SECURITY: for values placed inside onclick="fn('${...}')" — a plain escapeHtml() is not
+        // enough there, because the browser HTML-decodes the attribute BEFORE handing it to the JS
+        // parser, so an escaped "&#39;" would turn back into a raw ' and break out of the inline
+        // JS string. Backslash-escape first, then HTML-escape, so it survives both layers safely.
+        function escJsAttr(str) {
+            if (str === null || str === undefined) return '';
+            return escapeHtml(String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+        }
 
         setInterval(() => {
             const now = new Date();
@@ -813,9 +834,14 @@
 
         function logout() {
             showTechLoader("TERMINATING SECURE SESSION...");
+            // SECURITY: tell the server to invalidate this session token too (fire-and-forget) -
+            // otherwise a copied/stolen token would keep working after the user logs out.
+            if (loggedInUser && loggedInUser.sessionToken) {
+                fetch(APP_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'logout', sessionToken: loggedInUser.sessionToken }) }).catch(() => {});
+            }
             localStorage.removeItem('sungrowUser');
             setTimeout(() => {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
             }, 1200);
         }
 
@@ -839,6 +865,12 @@
         // ==========================================
         // MODAL EDIT & DELETE FUNCTIONS
         // ==========================================
+        function promptDeleteReport(reportId, plantName) {
+            document.getElementById('confirmDeleteText').innerHTML = `Are you sure you want to delete report <b>${escapeHtml(reportId)}</b> (${escapeHtml(plantName)})?<br>This action cannot be undone - use this to remove a mistaken or duplicate entry.`;
+            pendingDeleteAction = { type: 'report', reportId: reportId };
+            document.getElementById('confirmDeleteModal').style.display = 'flex';
+        }
+
         function promptDeleteEngineer(name) {
             document.getElementById('confirmDeleteText').innerHTML = `Are you sure you want to delete engineer <b>${name}</b>?<br>This action cannot be undone.`;
             pendingDeleteAction = { type: 'engineer', name: name };
@@ -869,13 +901,17 @@
 
             let actionKey = '';
             let reqBody = {};
+            const deleteType = pendingDeleteAction.type; // captured before closeConfirmDelete() clears pendingDeleteAction
 
             if (pendingDeleteAction.type === 'engineer') {
                 actionKey = 'delete_engineer';
-                reqBody = { action: actionKey, name: pendingDeleteAction.name };
+                reqBody = { action: actionKey, sessionToken: loggedInUser.sessionToken, name: pendingDeleteAction.name };
             } else if (pendingDeleteAction.type === 'equipment') {
                 actionKey = 'delete_project_equipment';
-                reqBody = { action: actionKey, projectName: pendingDeleteAction.project, model: pendingDeleteAction.model, serial: pendingDeleteAction.serial };
+                reqBody = { action: actionKey, sessionToken: loggedInUser.sessionToken, projectName: pendingDeleteAction.project, model: pendingDeleteAction.model, serial: pendingDeleteAction.serial };
+            } else if (pendingDeleteAction.type === 'report') {
+                actionKey = 'delete_report';
+                reqBody = { action: actionKey, sessionToken: loggedInUser.sessionToken, reportId: pendingDeleteAction.reportId };
             }
 
             try {
@@ -886,7 +922,7 @@
                 closeConfirmDelete();
                 if(data.status === 'success') {
                     showMessageModal(data.message, "Deleted Successfully");
-                    fetchReferences();
+                    if (deleteType === 'report') { fetchData(); } else { fetchReferences(); }
                 } else {
                     showMessageModal("Error: " + data.message, "Failed");
                 }
@@ -956,9 +992,9 @@
             btn.innerHTML = 'Saving...'; btn.disabled = true;
 
             try {
-                const res = await fetch(APP_SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'edit_engineer', oldName: oldName, newName: newName, newPosition: newPos }) 
+                const res = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'edit_engineer', sessionToken: loggedInUser.sessionToken, oldName: oldName, newName: newName, newPosition: newPos })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -1002,13 +1038,14 @@
             btn.innerHTML = 'Saving...'; btn.disabled = true;
 
             try {
-                const res = await fetch(APP_SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ 
-                        action: 'edit_project_equipment', 
+                const res = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'edit_project_equipment',
+                        sessionToken: loggedInUser.sessionToken,
                         oldProjectName: oldProject, oldModel: oldModel, oldSerial: oldSerial,
                         newRegion: newRegion, newProjectName: newProject, newModel: newModel, newSerial: newSerial
-                    }) 
+                    })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -1032,10 +1069,10 @@
         // ==========================================
         function getJobStatusBadge(status) {
             const s = status ? status.toLowerCase() : '';
-            if (s.includes('completed')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">${status}</span>`;
-            if (s.includes('progress')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 border border-blue-200">${status}</span>`;
-            if (s.includes('pending')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-200">${status}</span>`;
-            return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 border border-slate-200">${status || 'N/A'}</span>`;
+            if (s.includes('completed')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">${escapeHtml(status)}</span>`;
+            if (s.includes('progress')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 border border-blue-200">${escapeHtml(status)}</span>`;
+            if (s.includes('pending')) return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-200">${escapeHtml(status)}</span>`;
+            return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(status) || 'N/A'}</span>`;
         }
         function getApprovalStatusBadge(status) {
             const s = status ? status.toLowerCase() : '';
@@ -1043,7 +1080,7 @@
             if (s === 'pending') return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-200">Pending</span>`;
             return `<span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 border border-slate-200">Draft</span>`;
         }
-        function ticketNoOf(row) { return row.APACTicketNo || row.GSPTicketNo || '-'; }
+        function ticketNoOf(row) { return escapeHtml(row.APACTicketNo || row.GSPTicketNo || '-'); }
         function starDisplayHtml(rating) {
             const r = parseFloat(rating);
             if (!r || isNaN(r)) return '<span class="text-slate-400 text-xs">Not rated yet</span>';
@@ -1067,13 +1104,23 @@
             // --- SESSION CONTROL & RBAC ---
             const sessionStr = localStorage.getItem('sungrowUser');
             if (!sessionStr) {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
                 return;
             }
             loggedInUser = JSON.parse(sessionStr);
+
+            // SECURITY: session now expires client-side after SESSION_TTL_HOURS too (matches the
+            // server-side expiry in Code.gs) - a lost/shared device doesn't stay logged in forever.
+            const hoursSinceLogin = loggedInUser.loginTime ? (Date.now() - loggedInUser.loginTime) / 3600000 : 999;
+            if (!loggedInUser.sessionToken || hoursSinceLogin >= SESSION_TTL_HOURS) {
+                localStorage.removeItem('sungrowUser');
+                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
+                return;
+            }
+
             const roleStr = (loggedInUser.role || '').toLowerCase();
             if (roleStr.includes('partner')) {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
                 return;
             }
             isManager = roleStr.includes('manager');
@@ -1129,11 +1176,16 @@
 
         function fetchData() {
             document.getElementById('loading-overlay').style.display = 'flex';
-            Papa.parse(SHEET_CSV_URL, {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(results) {
-                    globalData = results.data;
-                    
+            // SECURITY: was Papa.parse(SHEET_CSV_URL) hitting a public "Publish to Web" CSV with
+            // every customer's name/phone/email + every approval token, no login required.
+            // Replaced with an authenticated call - server now also pre-filters by engineer for
+            // non-managers, same rule kept below too so behaviour stays identical either way.
+            fetch(APP_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'get_reports', sessionToken: loggedInUser.sessionToken }) })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.status !== 'success') throw new Error(resp.message || 'Failed to load data.');
+                    globalData = resp.data;
+
                     if (!isManager) {
                         globalData = globalData.filter(row => {
                             const engList = (row.ServiceEngineer || '').toLowerCase();
@@ -1145,12 +1197,11 @@
                     globalData.sort((a, b) => new Date(b.Timestamp || b.ReportDate) - new Date(a.Timestamp || a.ReportDate));
                     applyGlobalFilters();
                     document.getElementById('loading-overlay').style.display = 'none';
-                },
-                error: function() {
-                    showMessageModal("Failed to load data. Please check connection or Sheet visibility.", "Data Load Error");
+                })
+                .catch(() => {
+                    showMessageModal("Failed to load data. Please check connection or login session.", "Data Load Error");
                     document.getElementById('loading-overlay').style.display = 'none';
-                }
-            });
+                });
         }
 
         // ==========================================
@@ -1195,27 +1246,33 @@
         }
 
         async function updatePassword() {
+            const oldPass = document.getElementById('acc-old-pass').value.trim();
             const newPass = document.getElementById('acc-new-pass').value.trim();
             const confPass = document.getElementById('acc-conf-pass').value.trim();
 
+            // SECURITY: current password is now required to change your own password -
+            // otherwise anyone with a few seconds on an unlocked/shared session could silently
+            // lock the real user out by setting a new password without knowing the old one.
+            if (!oldPass) return showMessageModal("Please enter your current password.", "Error");
             if (!newPass || !confPass) return showMessageModal("Please fill in all password fields.", "Error");
             if (newPass !== confPass) return showMessageModal("Passwords do not match! Please check again.", "Error");
 
             const btn = document.getElementById('btn-update-pass');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Updating...'; 
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Updating...';
             btn.disabled = true;
 
             try {
                 const res = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'change_password', username: loggedInUser.name, newPassword: newPass })
+                    body: JSON.stringify({ action: 'change_password', sessionToken: loggedInUser.sessionToken, username: loggedInUser.name, oldPassword: oldPass, newPassword: newPass })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
 
                 if (data.status === 'success') {
                     showMessageModal("Your password has been updated successfully!", "Success");
+                    document.getElementById('acc-old-pass').value = '';
                     document.getElementById('acc-new-pass').value = '';
                     document.getElementById('acc-conf-pass').value = '';
                 } else {
@@ -1234,21 +1291,28 @@
         let regionProjectMap = {}; 
 
         function fetchReferences() {
-            Papa.parse(ENGINEER_CSV_URL, {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(results) {
-                    engineerData = results.data;
+            // SECURITY: was Papa.parse(ENGINEER_CSV_URL) / Papa.parse(PROJECT_CSV_URL) hitting
+            // public "Publish to Web" CSVs - the engineer one sat in the exact same sheet tab as
+            // the plaintext password column. Replaced with authenticated calls; the engineer
+            // endpoint server-side never returns the password column at all.
+            fetch(APP_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'get_engineers', sessionToken: loggedInUser.sessionToken }) })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.status !== 'success') { console.error(resp.message); return; }
+                    engineerData = resp.data;
                     renderSettingsEngineers();
-                }
-            });
-            Papa.parse(PROJECT_CSV_URL, {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(results) {
-                    projectData = results.data;
-                    extractRegionProjectMap(); 
-                    filterProjects(); 
-                }
-            });
+                })
+                .catch(err => console.error("Failed to fetch engineer references:", err));
+
+            fetch(APP_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'get_projects', sessionToken: loggedInUser.sessionToken }) })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.status !== 'success') { console.error(resp.message); return; }
+                    projectData = resp.data;
+                    extractRegionProjectMap();
+                    filterProjects();
+                })
+                .catch(err => console.error("Failed to fetch project references:", err));
         }
 
         // ==========================================
@@ -1364,14 +1428,14 @@
             renderData.forEach(row => {
                 if(row.Engineer && row.Engineer.trim() !== '') {
                     count++;
-                    const deleteBtnHtml = isManager ? `<button onclick="promptDeleteEngineer('${row.Engineer}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>` : '';
+                    const deleteBtnHtml = isManager ? `<button onclick="promptDeleteEngineer('${escJsAttr(row.Engineer)}')" class="text-red-400 hover:text-red-600 mx-2 transition" title="Delete"><i class="fa-solid fa-trash"></i></button>` : '';
 
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                            <td class="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">${row.Engineer}</td>
-                            <td class="px-6 py-3 text-slate-600">${row.Position || '-'}</td>
+                            <td class="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">${escapeHtml(row.Engineer)}</td>
+                            <td class="px-6 py-3 text-slate-600">${escapeHtml(row.Position) || '-'}</td>
                             <td class="px-6 py-3 text-right whitespace-nowrap">
-                                <button onclick="promptEditEngineer('${row.Engineer}', '${row.Position || ''}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="Update"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="promptEditEngineer('${escJsAttr(row.Engineer)}', '${escJsAttr(row.Position || '')}')" class="text-blue-500 hover:text-blue-700 mx-2 transition" title="Update"><i class="fa-solid fa-pen"></i></button>
                                 ${deleteBtnHtml}
                             </td>
                         </tr>
@@ -1484,10 +1548,10 @@
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
                             <td class="px-6 py-3 text-slate-400 text-xs">${globalIndex + 1}</td>
-                            <td class="px-6 py-3 font-medium text-brand-700 whitespace-nowrap">${pName || '-'}</td>
-                            <td class="px-6 py-3 text-slate-600 text-xs">${reg || '-'}</td>
-                            <td class="px-6 py-3 text-slate-800 font-medium whitespace-nowrap">${mod || '-'}</td>
-                            <td class="px-6 py-3 text-slate-600 text-xs font-mono">${ser || '-'}</td>
+                            <td class="px-6 py-3 font-medium text-brand-700 whitespace-nowrap">${escapeHtml(pName) || '-'}</td>
+                            <td class="px-6 py-3 text-slate-600 text-xs">${escapeHtml(reg) || '-'}</td>
+                            <td class="px-6 py-3 text-slate-800 font-medium whitespace-nowrap">${escapeHtml(mod) || '-'}</td>
+                            <td class="px-6 py-3 text-slate-600 text-xs font-mono">${escapeHtml(ser) || '-'}</td>
                             <td class="px-6 py-3 text-right whitespace-nowrap opacity-50 group-hover:opacity-100 transition-opacity">
                                 <button onclick="promptEditEquipment(${globalIndex})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded transition" title="Edit Record"><i class="fa-solid fa-pen text-xs"></i></button>
                                 <button onclick="promptDeleteEquipment(${globalIndex})" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded ml-1 transition" title="Delete Record"><i class="fa-solid fa-trash text-xs"></i></button>
@@ -1514,7 +1578,7 @@
             try {
                 const res = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'add_engineer', engineerName: name, engineerPosition: pos, engineerPassword: pass })
+                    body: JSON.stringify({ action: 'add_engineer', sessionToken: loggedInUser.sessionToken, engineerName: name, engineerPosition: pos, engineerPassword: pass })
                 });
                 let data;
                 try { data = await res.json(); } catch(e) { throw new Error("Invalid server response."); }
@@ -1558,12 +1622,13 @@
             try {
                 const res = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ 
-                        action: 'add_project_equipment', 
-                        region: region, 
-                        projectName: pName, 
-                        productModel: model, 
-                        serialNo: serial 
+                    body: JSON.stringify({
+                        action: 'add_project_equipment',
+                        sessionToken: loggedInUser.sessionToken,
+                        region: region,
+                        projectName: pName,
+                        productModel: model,
+                        serialNo: serial
                     })
                 });
                 let data;
@@ -2197,6 +2262,7 @@
 
                 const payload = {
                     action: "submit_claim",
+                    sessionToken: loggedInUser.sessionToken,
                     engineerName: engineer,
                     claimPeriodRaw: periodRaw,
                     claimPeriodFile: periodFriendly,
@@ -2272,10 +2338,10 @@
             data.slice(0, 5).forEach(row => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="px-6 py-3 whitespace-nowrap"><div class="font-medium text-slate-800">${row.ReportDate || '-'}</div></td>
-                        <td class="px-6 py-3"><div class="font-medium text-slate-800">${row.PlantName || '-'}</div><div class="text-xs text-slate-500">${row.Task || ''}</div></td>
+                        <td class="px-6 py-3 whitespace-nowrap"><div class="font-medium text-slate-800">${escapeHtml(row.ReportDate) || '-'}</div></td>
+                        <td class="px-6 py-3"><div class="font-medium text-slate-800">${escapeHtml(row.PlantName) || '-'}</div><div class="text-xs text-slate-500">${escapeHtml(row.Task) || ''}</div></td>
                         <td class="px-6 py-3 text-slate-600">${ticketNoOf(row)}</td>
-                        <td class="px-6 py-3 text-slate-800">${row.ServiceEngineer || '-'}</td>
+                        <td class="px-6 py-3 text-slate-800">${escapeHtml(row.ServiceEngineer) || '-'}</td>
                         <td class="px-6 py-3">${getJobStatusBadge(row.JobStatus)}</td>
                     </tr>`;
             });
@@ -2311,13 +2377,13 @@
                 const jobDateRange = row.ServiceJobDateFrom ? (row.ServiceJobDateTo && row.ServiceJobDateTo !== row.ServiceJobDateFrom ? `${row.ServiceJobDateFrom} - ${row.ServiceJobDateTo}` : row.ServiceJobDateFrom) : '-';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-50 transition">
-                        <td class="px-6 py-4 font-medium text-brand-600 whitespace-nowrap">${row.ReportID || '-'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-800">${row.ReportDate || '-'}</td>
-                        <td class="px-6 py-4"><div class="font-bold text-slate-800">${row.PlantName || '-'}</div><div class="text-xs text-slate-500">${row.EPCC || ''}</div></td>
+                        <td class="px-6 py-4 font-medium text-brand-600 whitespace-nowrap">${escapeHtml(row.ReportID) || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-slate-800">${escapeHtml(row.ReportDate) || '-'}</td>
+                        <td class="px-6 py-4"><div class="font-bold text-slate-800">${escapeHtml(row.PlantName) || '-'}</div><div class="text-xs text-slate-500">${escapeHtml(row.EPCC) || ''}</div></td>
                         <td class="px-6 py-4 text-slate-600 text-sm">${ticketNoOf(row)}</td>
-                        <td class="px-6 py-4 text-slate-600 text-xs">${jobDateRange}</td>
-                        <td class="px-6 py-4 text-slate-800">${row.ServiceEngineer || '-'}</td>
-                        <td class="px-6 py-4 text-slate-600 text-xs">${row.Task || '-'}</td>
+                        <td class="px-6 py-4 text-slate-600 text-xs">${escapeHtml(jobDateRange)}</td>
+                        <td class="px-6 py-4 text-slate-800">${escapeHtml(row.ServiceEngineer) || '-'}</td>
+                        <td class="px-6 py-4 text-slate-600 text-xs">${escapeHtml(row.Task) || '-'}</td>
                         <td class="px-6 py-4">${getJobStatusBadge(row.JobStatus)}</td>
                     </tr>`;
             });
@@ -2343,13 +2409,13 @@
             const filterSelect = document.getElementById('filter-status');
             const currentStatus = filterSelect.value;
             filterSelect.innerHTML = '<option value="">All Job Status</option>';
-            statuses.forEach(s => { filterSelect.innerHTML += `<option value="${s}">${s}</option>`; });
+            statuses.forEach(s => { filterSelect.innerHTML += `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`; });
             filterSelect.value = currentStatus;
 
             const engSelect = document.getElementById('claim-engineer');
             if (engSelect) {
                 if (!isManager) {
-                    engSelect.innerHTML = `<option value="${loggedInUser.name}">${loggedInUser.name}</option>`;
+                    engSelect.innerHTML = `<option value="${escapeHtml(loggedInUser.name)}">${escapeHtml(loggedInUser.name)}</option>`;
                     engSelect.value = loggedInUser.name;
                     engSelect.disabled = true;
                     engSelect.classList.add('bg-slate-200', 'cursor-not-allowed', 'text-slate-500');
@@ -2357,7 +2423,7 @@
                     const currentEng = engSelect.value;
                     engSelect.innerHTML = '<option value="">All Engineers</option>';
                     const sortedEng = Array.from(engineers).sort();
-                    sortedEng.forEach(e => { engSelect.innerHTML += `<option value="${e}">${e}</option>`; });
+                    sortedEng.forEach(e => { engSelect.innerHTML += `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`; });
                     engSelect.value = currentEng;
                 }
             }
@@ -2367,7 +2433,7 @@
                 const currentProj = projSelect.value;
                 projSelect.innerHTML = '<option value="">All Projects</option>';
                 const sortedProjects = Array.from(projects).sort();
-                sortedProjects.forEach(p => { projSelect.innerHTML += `<option value="${p}">${p}</option>`; });
+                sortedProjects.forEach(p => { projSelect.innerHTML += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`; });
                 projSelect.value = currentProj;
             }
         }
@@ -2407,20 +2473,20 @@
                     <div class="bg-white rounded-lg p-5 border-l-4 border-red-500 shadow-sm flex flex-col md:flex-row gap-4 hover:shadow-md transition">
                         <div class="flex-1">
                             <div class="flex items-center space-x-2 mb-2 flex-wrap gap-y-1">
-                                <span class="bg-slate-100 text-slate-700 text-xs font-mono px-2 py-0.5 rounded">${row.ReportID || 'No ID'}</span>
-                                <span class="text-xs text-slate-500"><i class="fa-regular fa-calendar mr-1"></i> ${row.ReportDate || '-'}</span>
-                                <span class="text-xs text-brand-600 font-medium bg-brand-50 px-2 py-0.5 rounded">${row.PlantName || '-'}</span>
-                                <span class="text-xs text-slate-500">${row.Task || ''}</span>
+                                <span class="bg-slate-100 text-slate-700 text-xs font-mono px-2 py-0.5 rounded">${escapeHtml(row.ReportID) || 'No ID'}</span>
+                                <span class="text-xs text-slate-500"><i class="fa-regular fa-calendar mr-1"></i> ${escapeHtml(row.ReportDate) || '-'}</span>
+                                <span class="text-xs text-brand-600 font-medium bg-brand-50 px-2 py-0.5 rounded">${escapeHtml(row.PlantName) || '-'}</span>
+                                <span class="text-xs text-slate-500">${escapeHtml(row.Task) || ''}</span>
                             </div>
                             <div class="bg-red-50 text-red-800 p-3 rounded-md text-sm border border-red-100 mb-3">
                                 <strong class="text-red-900 block mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Reason for Pending:</strong>
-                                ${row.PendingReason || 'No reason given.'}
+                                ${escapeHtml(row.PendingReason) || 'No reason given.'}
                             </div>
-                            <p class="text-sm text-slate-600"><strong>Job Description:</strong> ${row.JobDescription || '-'}</p>
+                            <p class="text-sm text-slate-600"><strong>Job Description:</strong> ${escapeHtml(row.JobDescription) || '-'}</p>
                         </div>
                         <div class="w-full md:w-64 bg-slate-50 p-4 rounded-lg flex flex-col justify-center border border-slate-100">
                             <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Service Engineer</p>
-                            <p class="font-medium text-slate-800">${row.ServiceEngineer || 'Unknown'}</p>
+                            <p class="font-medium text-slate-800">${escapeHtml(row.ServiceEngineer) || 'Unknown'}</p>
                             <p class="text-xs text-slate-500 mb-3">Ticket: ${ticketNoOf(row)}</p>
                             <p class="text-xs text-slate-500 uppercase tracking-wide mb-1">Approval Status</p>
                             <div>${getApprovalStatusBadge(row.Status)}</div>
@@ -2674,6 +2740,15 @@
                 const mailtoLink = `mailto:${emailAddr}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
                 const waLink = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(waBodyMsg)}` : '#';
 
+                // Delete allowed for: Manager (any report), or the engineer who owns this report
+                // (fixes mistaken/duplicate entries without needing to key in the whole form twice).
+                const myNameLc = (loggedInUser.name || '').toLowerCase().split('(')[0].trim();
+                const ownsThisReport = (row.ServiceEngineer || '').toString().toLowerCase().includes(myNameLc);
+                const canDeleteThisReport = isManager || ownsThisReport;
+                const deleteCellHtml = canDeleteThisReport
+                    ? `<button onclick="promptDeleteReport('${escJsAttr(row.ReportID)}', '${escJsAttr(row.PlantName || 'this report')}')" class="inline-block text-slate-400 hover:text-red-500 transition p-2" title="Delete Report"><i class="fa-solid fa-trash text-lg"></i></button>`
+                    : `<span class="text-xs text-slate-300">&mdash;</span>`;
+
                 let approvalStatusHtml = '';
                 if (isApproved) {
                     approvalStatusHtml = `<span class="flex items-center text-emerald-600 text-sm font-medium"><i class="fa-solid fa-check-circle mr-1.5"></i> Client Signed</span>
@@ -2685,8 +2760,8 @@
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-50 transition">
-                        <td class="px-6 py-4"><div class="font-bold text-brand-600">${row.ReportID || '-'}</div><div class="text-xs text-slate-500 mt-1">${row.PlantName || '-'} | ${row.ReportDate || '-'}</div></td>
-                        <td class="px-6 py-4"><div class="text-slate-800 font-medium">${clientName}</div><div class="text-xs text-slate-500">${row.ClientAckCompany || '-'}</div></td>
+                        <td class="px-6 py-4"><div class="font-bold text-brand-600">${escapeHtml(row.ReportID) || '-'}</div><div class="text-xs text-slate-500 mt-1">${escapeHtml(row.PlantName) || '-'} | ${escapeHtml(row.ReportDate) || '-'}</div></td>
+                        <td class="px-6 py-4"><div class="text-slate-800 font-medium">${escapeHtml(clientName)}</div><div class="text-xs text-slate-500">${escapeHtml(row.ClientAckCompany) || '-'}</div></td>
                         <td class="px-6 py-4">${hasDraft ? `<a href="${draftUrl}" target="_blank" class="inline-flex text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded text-xs font-medium border border-brand-200 transition items-center w-max"><i class="fa-regular fa-file-pdf mr-1.5 text-red-500"></i> View Draft</a>` : `<span class="text-xs text-slate-400 italic">No Draft</span>`}</td>
                         <td class="px-6 py-4">${approvalStatusHtml}</td>
                         <td class="px-6 py-4">${hasFinal ? `<a href="${finalUrl}" target="_blank" class="inline-flex text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 transition items-center w-max"><i class="fa-solid fa-file-pdf mr-1.5 text-red-600"></i> Download Final</a>` : `<span class="text-xs text-slate-400 italic">Not Generated</span>`}</td>
@@ -2694,6 +2769,7 @@
                             <a href="${emailAddr ? mailtoLink : '#'}" class="inline-block ${emailAddr ? 'text-slate-500 hover:text-brand-600' : 'text-slate-300 cursor-not-allowed'} transition p-2" title="${emailAddr ? 'Send Email' : 'No Client Email'}"><i class="fa-solid fa-envelope text-lg"></i></a>
                             <a href="${waLink}" target="${waPhone ? '_blank' : '_self'}" class="inline-block ${waPhone ? 'text-slate-500 hover:text-green-500' : 'text-slate-300 cursor-not-allowed'} transition p-2" title="${waPhone ? 'Send WhatsApp' : 'No Phone Number'}"><i class="fa-brands fa-whatsapp text-lg"></i></a>
                         </td>
+                        <td class="px-6 py-4 text-right">${deleteCellHtml}</td>
                     </tr>`;
             });
         }
