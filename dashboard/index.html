@@ -841,7 +841,7 @@
             }
             localStorage.removeItem('sungrowUser');
             setTimeout(() => {
-                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
             }, 1200);
         }
 
@@ -1104,7 +1104,7 @@
             // --- SESSION CONTROL & RBAC ---
             const sessionStr = localStorage.getItem('sungrowUser');
             if (!sessionStr) {
-                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
                 return;
             }
             loggedInUser = JSON.parse(sessionStr);
@@ -1114,13 +1114,13 @@
             const hoursSinceLogin = loggedInUser.loginTime ? (Date.now() - loggedInUser.loginTime) / 3600000 : 999;
             if (!loggedInUser.sessionToken || hoursSinceLogin >= SESSION_TTL_HOURS) {
                 localStorage.removeItem('sungrowUser');
-                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
                 return;
             }
 
             const roleStr = (loggedInUser.role || '').toLowerCase();
             if (roleStr.includes('partner')) {
-                window.location.href = 'https://annurprosolutions-cell.github.io/sungrowsecurity/';
+                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
                 return;
             }
             isManager = roleStr.includes('manager');
