@@ -214,7 +214,7 @@
             <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-red-500/30 shadow-sm">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
             </button>
-            <a href="https://sungrowutilityservice-ai.github.io/fieldreportform/" class="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
+            <a href="/" class="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
                 <i class="fa-solid fa-arrow-left-long"></i><span>Back to Form</span>
             </a>
         </div>
@@ -841,7 +841,7 @@
             }
             localStorage.removeItem('sungrowUser');
             setTimeout(() => {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = '/';
             }, 1200);
         }
 
@@ -1104,7 +1104,7 @@
             // --- SESSION CONTROL & RBAC ---
             const sessionStr = localStorage.getItem('sungrowUser');
             if (!sessionStr) {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = '/';
                 return;
             }
             loggedInUser = JSON.parse(sessionStr);
@@ -1114,13 +1114,13 @@
             const hoursSinceLogin = loggedInUser.loginTime ? (Date.now() - loggedInUser.loginTime) / 3600000 : 999;
             if (!loggedInUser.sessionToken || hoursSinceLogin >= SESSION_TTL_HOURS) {
                 localStorage.removeItem('sungrowUser');
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = '/';
                 return;
             }
 
             const roleStr = (loggedInUser.role || '').toLowerCase();
             if (roleStr.includes('partner')) {
-                window.location.href = 'https://sungrowutilityservice-ai.github.io/fieldreportform/';
+                window.location.href = '/';
                 return;
             }
             isManager = roleStr.includes('manager');
