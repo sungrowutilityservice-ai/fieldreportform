@@ -554,11 +554,20 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypIUdID03zvyxmxUzFc5Avj4jHXoflLNBTRk2HgCYJfhNVyfqEA_Z-45QWyAjdvSvX/exec";
-        const ENGINEER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=33758384&single=true&output=csv";
-        const EQUIPMENT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTedYI72qkffFMoxGW4z-5FV_UfqXg--f6ql5bnGbkB3kiNes5b3nqUm8umfjJ1wb5mRGyRkLeMh4ua/pub?gid=27746818&single=true&output=csv";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMkn-M-5mKrTnSjSOQt85Mhyu0dPBEMdmHTvkcUMs39SbMaG7uXwACCk14fLaPW3Cf4Q/exec";
+        // SECURITY: the old public "Publish to Web" CSV URLs (ENGINEER_CSV_URL / EQUIPMENT_CSV_URL)
+        // have been removed entirely - they are no longer referenced anywhere in this file (all
+        // dropdown/reference data now goes through WEB_APP_URL's session-gated actions instead).
 
         let loggedInUser = { name: '', role: '' };
+        const SESSION_TTL_HOURS = 12; // must match SESSION_TTL_HOURS in Code.gs
+
+        // SECURITY: escape dynamic text before inserting via innerHTML, to stop stored-XSS
+        // from data that ultimately comes from other people (ticket search results, etc).
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
 
         const templateHeaderHTML = `
             <div class="report-header">
@@ -625,25 +634,26 @@
         let projectEquipmentDb = {};
 
         function loadDropdownData() {
-            Papa.parse(ENGINEER_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
+            // SECURITY: was Papa.parse(ENGINEER_CSV_URL) hitting a public "Publish to Web" CSV -
+            // replaced with an authenticated call so the engineer/position list requires login.
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_engineers', sessionToken: loggedInUser.sessionToken }) })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.status !== 'success') { console.error("Failed to fetch engineer data:", resp.message); return; }
                     const engineerDropdown = document.getElementById('engineer-dropdown');
                     const engineerSet = new Set();
 
-                    results.data.forEach(row => {
+                    resp.data.forEach(row => {
                         if (row.Engineer) {
                             const position = row.Position ? ` (${row.Position})` : '';
                             const fullName = `${row.Engineer}${position}`;
                             if (!engineerSet.has(fullName)) {
                                 engineerSet.add(fullName);
                                 const lbl = document.createElement('label');
-                                
+
                                 let isManager = (loggedInUser.role || '').toLowerCase().includes('manager');
                                 let isMatch = row.Engineer.toLowerCase() === loggedInUser.name.toLowerCase();
-                                
+
                                 let checkAttr = '';
                                 let disableAttr = '';
                                 let styleStr = 'color: #2c3e50;';
@@ -651,44 +661,42 @@
                                 if (isMatch) {
                                     checkAttr = 'checked';
                                     if (!selectedEngineers.includes(fullName)) selectedEngineers.push(fullName);
-                                    
+
                                     if (!isManager) {
                                         disableAttr = 'disabled';
                                         styleStr = 'color: #95a5a6; font-style: italic; font-weight: bold;';
                                     }
                                 }
 
-                                lbl.innerHTML = `<input type="checkbox" value="${fullName}" onchange="handleEngineerSelection(this)" ${checkAttr} ${disableAttr}> <span style="${styleStr}">${fullName}</span>`;
+                                lbl.innerHTML = `<input type="checkbox" value="${escapeHtml(fullName)}" onchange="handleEngineerSelection(this)" ${checkAttr} ${disableAttr}> <span style="${styleStr}">${escapeHtml(fullName)}</span>`;
                                 engineerDropdown.appendChild(lbl);
                             }
                         }
                     });
                     updateEngineerUI();
-                },
-                error: function(err) {
-                    console.error("Failed to fetch engineer data from Google Sheet:", err);
-                }
-            });
+                })
+                .catch(err => console.error("Failed to fetch engineer data from server:", err));
 
-            Papa.parse(EQUIPMENT_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
+            // SECURITY: was Papa.parse(EQUIPMENT_CSV_URL) hitting a public "Publish to Web" CSV -
+            // replaced with an authenticated call. Same fuzzy key-matching kept so nothing else changes.
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_projects', sessionToken: loggedInUser.sessionToken }) })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.status !== 'success') { console.error("Failed to fetch project/equipment data:", resp.message); return; }
                     const selectProject = document.getElementById('f_project_name');
                     projectEquipmentDb = {};
-                    
-                    results.data.forEach(row => {
+
+                    resp.data.forEach(row => {
                         // Dynamically find keys in case of trailing spaces in header names
                         const keys = Object.keys(row);
                         const projKey = keys.find(k => k.toLowerCase().includes('project name')) || 'Project Name';
                         const modelKey = keys.find(k => k.toLowerCase().includes('product model')) || 'Product Model';
                         const serialKey = keys.find(k => k.toLowerCase().includes('serial') || k.toLowerCase().includes('product code')) || 'Product Code/Serial';
-                        
+
                         const proj = row[projKey];
                         const model = row[modelKey];
                         const serial = row[serialKey];
-                        
+
                         if (proj && proj.trim() !== '') {
                             if (!projectEquipmentDb[proj]) projectEquipmentDb[proj] = {};
                             if (model && model.trim() !== '') {
@@ -699,7 +707,7 @@
                             }
                         }
                     });
-                    
+
                     // Populate Project Dropdown
                     Object.keys(projectEquipmentDb).sort().forEach(proj => {
                         const optionP = document.createElement('option');
@@ -707,11 +715,8 @@
                         optionP.innerText = proj;
                         selectProject.appendChild(optionP);
                     });
-                },
-                error: function(err) {
-                    console.error("Failed to fetch project/equipment data from Google Sheet:", err);
-                }
-            });
+                })
+                .catch(err => console.error("Failed to fetch project/equipment data from server:", err));
         }
 
         window.addEventListener('load', () => {
@@ -720,37 +725,48 @@
         });
 
         function fetchEngineersForLogin() {
-            Papa.parse(ENGINEER_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
+            // SECURITY: was Papa.parse(ENGINEER_CSV_URL) hitting a public "Publish to Web" CSV that
+            // also happened to sit in the same tab as the password column. Replaced with a call to
+            // a purpose-built public action that returns ONLY name + position, never the password.
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_login_list' }) })
+                .then(res => res.json())
+                .then(resp => {
                     const loginSelect = document.getElementById('loginUsername');
                     loginSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
-                    results.data.forEach(row => {
-                        if (row.Engineer) {
-                            const option = document.createElement('option');
-                            option.value = row.Engineer; // Exact name for backend checking
-                            const roleText = row.Position ? row.Position : 'Staff';
-                            option.innerText = `${row.Engineer} (${roleText})`;
-                            loginSelect.appendChild(option);
-                        }
-                    });
+                    if (resp.status === 'success') {
+                        resp.data.forEach(row => {
+                            if (row.Engineer) {
+                                const option = document.createElement('option');
+                                option.value = row.Engineer; // Exact name for backend checking
+                                const roleText = row.Position ? row.Position : 'Staff';
+                                option.innerText = `${row.Engineer} (${roleText})`;
+                                loginSelect.appendChild(option);
+                            }
+                        });
+                    }
                     checkSessionAndInit();
-                },
-                error: function(err) {
+                })
+                .catch(err => {
                     console.error("Failed to load users for login:", err);
                     document.getElementById('loginUsername').innerHTML = '<option value="">Error loading database</option>';
                     checkSessionAndInit();
-                }
-            });
+                });
         }
 
         function checkSessionAndInit() {
             // Using localStorage instead of sessionStorage for persistency
             const storedSession = localStorage.getItem('sungrowUser');
+            // SECURITY: session now expires client-side after SESSION_TTL_HOURS too (matches the
+            // server-side expiry in Code.gs) - a lost/shared device doesn't stay logged in forever.
+            let stillValid = false;
             if (storedSession) {
-                loggedInUser = JSON.parse(storedSession);
+                const parsed = JSON.parse(storedSession);
+                const hoursSinceLogin = parsed.loginTime ? (Date.now() - parsed.loginTime) / 3600000 : 999;
+                stillValid = !!parsed.sessionToken && hoursSinceLogin < SESSION_TTL_HOURS;
+                if (!stillValid) localStorage.removeItem('sungrowUser');
+                else loggedInUser = parsed;
+            }
+            if (stillValid) {
                 document.getElementById('loginModal').style.display = 'none';
                 initSystem();
             } else {
@@ -796,7 +812,11 @@
 
                 if(data.status === 'success') {
                     loggedInUser = data.user;
-                    // Changed to localStorage to keep user logged in until manual logout
+                    // SECURITY: store the session token + login timestamp too, so every
+                    // subsequent request can be authenticated and the session can expire.
+                    loggedInUser.sessionToken = data.sessionToken;
+                    loggedInUser.loginTime = Date.now();
+                    // Changed to localStorage to keep user logged in until manual logout (or expiry)
                     localStorage.setItem('sungrowUser', JSON.stringify(loggedInUser));
                     document.getElementById('loginModal').style.display = 'none';
                     initSystem();
@@ -813,6 +833,11 @@
         }
 
         function executeLogout() {
+            // SECURITY: tell the server to invalidate this session token too (fire-and-forget) -
+            // otherwise a copied/stolen token would keep working after the user logs out.
+            if (loggedInUser && loggedInUser.sessionToken) {
+                fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'logout', sessionToken: loggedInUser.sessionToken }) }).catch(() => {});
+            }
             // Remove local persistent data
             localStorage.removeItem('sungrowUser');
             location.reload();
@@ -1038,7 +1063,7 @@
             btn.disabled = true;
             showTechLoader("SEARCHING DATABASE...");
 
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "search_ticket", keyword: keyword }) })
+            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "search_ticket", keyword: keyword, sessionToken: loggedInUser.sessionToken }) })
                 .then(res => res.json())
                 .then(data => {
                     hideTechLoader(); btn.disabled = false; msgBox.innerText = "";
@@ -1056,12 +1081,15 @@
             tbody.innerHTML = '';
             results.forEach((row) => {
                 const tr = document.createElement('tr');
-                const stringifiedData = JSON.stringify(row).replace(/'/g, "'");
+                // SECURITY FIX: original was .replace(/'/g, "'") which is a no-op (replaces a
+                // quote with itself) - a project/ticket name containing a single quote could break
+                // out of the onclick='...' attribute. Now properly escaped to &#39; so it can't.
+                const stringifiedData = JSON.stringify(row).replace(/'/g, "&#39;");
                 const ticketDisplay = row.apacTicket || row.gspTicket || row.reportId;
                 tr.innerHTML = `
-                    <td>${row.reportDate || ''}</td>
-                    <td>${ticketDisplay || ''}</td>
-                    <td>${row.plantName || ''}</td>
+                    <td>${escapeHtml(row.reportDate)}</td>
+                    <td>${escapeHtml(ticketDisplay)}</td>
+                    <td>${escapeHtml(row.plantName)}</td>
                     <td><button class="btn-pick-ticket" onclick='loadDraftData(${stringifiedData})'>Select</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -1167,6 +1195,7 @@
 
             const payload = {
                 action: "save_draft",
+                sessionToken: loggedInUser.sessionToken,
                 staffToken: currentStaffToken,
                 serviceEngineer: selectedEngineers.join(', '),
                 apacTicket: document.getElementById('f_apac_ticket').value,
@@ -1408,6 +1437,7 @@
 
                 const payload = {
                     action: "submit_report",
+                    sessionToken: loggedInUser.sessionToken,
                     staffToken: currentStaffToken,
                     serviceEngineer: selectedEngineers.join(', '),
                     apacTicket: document.getElementById('f_apac_ticket').value,
